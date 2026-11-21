@@ -1,6 +1,8 @@
 """Exercise the persisted planning workflow against the Compose PostgreSQL API."""
 
+import csv
 import io
+import json
 import os
 import time
 from zipfile import ZipFile
@@ -76,7 +78,7 @@ def smoke(base_url: str, token: str) -> None:
             {
                 "at": 0,
                 "seconds": 3,
-                "config": {"runs": 10, "seed": 61},
+                "config": {"runs": 10, "seed": 61, "trace": True},
                 "change": {"kind": "breakdown", "machine": "M-07", "start": 0, "end": 240},
             },
             "smoke-reschedule",
@@ -95,7 +97,32 @@ def smoke(base_url: str, token: str) -> None:
         with ZipFile(io.BytesIO(call("GET", target + "/export").content)) as archive:
             assert archive.testzip() is None
             assert "rescheduling_diff.json" in archive.namelist()
-        print(f"PostgreSQL API workflow passed on schedule {revised['schedule']}")
+            replication = next(
+                csv.DictReader(
+                    io.StringIO(archive.read("simulation_results.csv").decode("utf-8-sig"))
+                )
+            )
+            observed = json.loads(replication["operations"])[0]
+            processing = json.loads(replication["processing"])[0]
+        payload = {
+            "dataset": call("GET", target).json()["dataset"],
+            "observations": [
+                {
+                    "id": "smoke-observation",
+                    "order": observed["order"],
+                    "stage": observed["stage"],
+                    "machine": observed["machine"],
+                    "duration": processing["active_minutes"],
+                    "at": observed["end"],
+                    "shift": int(observed["start"] % 1440 >= 510),
+                    "source": "simulated",
+                }
+            ],
+        }
+        first_feedback = call("POST", root + "/execution", payload).json()
+        second_feedback = call("POST", root + "/execution", payload).json()
+        assert first_feedback == second_feedback and first_feedback["observations"] == 1
+        print(f"API planning workflow passed on schedule {revised['schedule']}")
 
 
 if __name__ == "__main__":

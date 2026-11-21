@@ -33,3 +33,15 @@ python -m forgeworks export --schedule-id SCHEDULE_ID --output plan.zip
 Set FORGEWORKS_PLANNER_TOKEN before approval or release. Valid schedules start VALIDATED, may advance to SIMULATED, and need APPROVED before RELEASED. A subsequent release marks the previous active plan SUPERSEDED. Failed solves stay DRAFT. Rejection is available for unreleased versions. High-risk approval requires a referenced uncertain simulation of at least ten replications.
 
 Replanning freezes setup-started work and commitments before the option cutoff. In-progress work keeps its scheduled bounds and can conflict with an outage. A failed replan preserves the source. The active lineage is checked when releasing a replan. Feedback can be submitted using record-execution and supports reviewed retraining. Keep local model files trusted.
+
+Run the PostgreSQL integration scenario against a fresh disposable Compose project.
+
+```bash
+export FORGEWORKS_PLANNER_TOKEN=local-compose-planner
+docker compose -p forgeworks-review up -d --build --wait api-postgres
+docker compose -p forgeworks-review exec -T api-postgres alembic check
+python examples/compose_smoke.py
+docker compose -p forgeworks-review down --volumes
+```
+
+The smoke script records fixture jobs and releases both an initial plan and a breakdown replan. Use a fresh project when repeating it because its idempotency keys are fixed and the test expects a new workflow. The final command deletes the disposable database.

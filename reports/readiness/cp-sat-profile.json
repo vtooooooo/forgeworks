@@ -1,0 +1,136 @@
+{
+  "scenario": "normal",
+  "seed": 42,
+  "solver_limit_seconds": 5,
+  "baseline_revision": "fc6a57c3915ae0271b9519d3a3ef63151e9b584b",
+  "baseline_profile": [
+    {
+      "build_s": 0.030662341999914133,
+      "variables": 1352,
+      "constraints": 2349,
+      "peak_build_rss_mib": 90.66015625,
+      "search_s": 5.003510038000059,
+      "peak_total_rss_mib": 114.6953125,
+      "orders": 6,
+      "status": "FEASIBLE",
+      "valid": true,
+      "objective": 838,
+      "detail": "",
+      "profile": null
+    },
+    {
+      "build_s": 0.7593461409999236,
+      "variables": 42026,
+      "constraints": 80061,
+      "peak_build_rss_mib": 121.56640625,
+      "search_s": 5.020408503999988,
+      "peak_total_rss_mib": 225.19140625,
+      "orders": 40,
+      "status": "FEASIBLE",
+      "valid": true,
+      "objective": 2611,
+      "detail": "",
+      "profile": null
+    },
+    {
+      "build_s": 12.066171900999962,
+      "variables": 901739,
+      "constraints": 1783547,
+      "peak_build_rss_mib": 798.0390625,
+      "search_s": 4.72708330599994,
+      "peak_total_rss_mib": 1751.28515625,
+      "orders": 200,
+      "status": "UNKNOWN",
+      "valid": false,
+      "objective": null,
+      "detail": "",
+      "profile": null
+    }
+  ],
+  "review_profile": [
+    {
+      "orders": 6,
+      "status": "FEASIBLE",
+      "valid": true,
+      "objective": 838,
+      "detail": "",
+      "profile": {
+        "candidate_pairs": 939,
+        "model_pairs": 939,
+        "sequence_arcs": 1156,
+        "variables": 1352,
+        "constraints": 2349,
+        "dispatch_seconds": 0.006217602000106126,
+        "construction_seconds": 0.015806916999963505,
+        "search_seconds": 5.002265573000159,
+        "peak_construction_rss_mib": 90.62109375,
+        "peak_search_rss_mib": 114.86328125
+      }
+    },
+    {
+      "orders": 40,
+      "status": "FEASIBLE",
+      "valid": true,
+      "objective": 2611,
+      "detail": "",
+      "profile": {
+        "candidate_pairs": 39351,
+        "model_pairs": 39351,
+        "sequence_arcs": 40760,
+        "variables": 42026,
+        "constraints": 41660,
+        "dispatch_seconds": 0.06046805100004349,
+        "construction_seconds": 0.47991794100016705,
+        "search_seconds": 5.02251930400007,
+        "peak_construction_rss_mib": 110.453125,
+        "peak_search_rss_mib": 205.6640625
+      }
+    },
+    {
+      "orders": 200,
+      "status": "UNKNOWN",
+      "valid": false,
+      "objective": null,
+      "detail": "",
+      "profile": {
+        "candidate_pairs": 888907,
+        "model_pairs": 888907,
+        "sequence_arcs": 895670,
+        "variables": 901739,
+        "constraints": 899062,
+        "dispatch_seconds": 0.0,
+        "construction_seconds": 9.568970793000062,
+        "search_seconds": 4.735892317999969,
+        "peak_construction_rss_mib": 503.453125,
+        "peak_search_rss_mib": 1166.15625
+      }
+    },
+    {
+      "orders": 200,
+      "status": "FEASIBLE",
+      "valid": true,
+      "objective": 9938920,
+      "detail": "",
+      "profile": {
+        "candidate_pairs": 888907,
+        "model_pairs": 32619,
+        "sequence_arcs": 33976,
+        "variables": 37037,
+        "constraints": 37368,
+        "dispatch_seconds": 1.283756546999939,
+        "construction_seconds": 0.4277065470000707,
+        "search_seconds": 4.782104866000054,
+        "peak_construction_rss_mib": 110.15234375,
+        "peak_search_rss_mib": 244.2578125
+      }
+    }
+  ],
+  "note": "Runs used a fresh Linux Python process per case. The original and review 200-order unrestricted diagnostics raised the guard in scratch copies only. The original build timing includes EDD hints where applicable. RSS is an absolute process high-water mark; the search phase can retain the model and native solver copies.",
+  "dispatch_200_edd_objective": 9938920,
+  "compact_small_trial": {
+    "erp_cp_sat_nominal_weighted_tardiness": 857,
+    "erp_cp_sat_holdout_weighted_tardiness": 3233.65,
+    "prior_erp_cp_sat_nominal_weighted_tardiness": 849,
+    "prior_erp_cp_sat_holdout_weighted_tardiness": 2668.36
+  }
+}

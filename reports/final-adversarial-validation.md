@@ -1,5 +1,25 @@
 # Adversarial validation
 
+## Follow-up production-readiness audit
+
+| Risk | Test and observed result |
+|---|---|
+| Quadratic model construction | Isolated before-and-after measurements used separate processes, five-second solver budgets, protobuf counts and process peak RSS. Unrestricted 200-order search reached UNKNOWN with the guard raised. Fixed dispatch assignments found a valid 715-operation plan at roughly 244 MiB peak RSS. Its objective tied EDD. |
+| Sequence and capacity semantics | Both setup formulations passed directional changeover checks with a hand-computed ten-minute transition. A corrupt setup was flagged for both overlap and setup duration. A restricted solve preserved a frozen machine assignment and all timestamps. A downtime conflict produced no restricted plan. |
+| Timeouts | A sub-microsecond search budget produced UNKNOWN with an empty schedule and recorded model statistics. The independent validator rejects UNKNOWN as having no solution. |
+| Stock, recovery and paired draws | Across four paired replications, alternate machine assignments shared sampled receipt and outage draws. Competing orders waited for available stock, intervals avoided outage periods, and processing held its machine across repair. An independent 30-replication replay of the same persisted 40-order plan was byte-identical against the prior implementation for unchanged inputs. |
+| Chronology | Training formerly assigned fresh ranks to execution records. This could separate identical recorded times across splits. It now preserves timestamps and keeps ties together. Perturbing final-partition outcomes did not affect fitted predictions, candidate selection or calibration radii. All published MAE and coverage figures reproduced. |
+| Persisted what-if evidence | A duration overrun previously changed the optimizer inputs while uncertain replay sampled the original demand. The changed duration is now persisted and included in the twin's demand. A regression test verified the exact difference under shared draws, grounded risk in the stored simulation, and verified the original released row was unchanged. |
+| Invalid release | Approval and release now revalidate canonical saved plan data inside the write transaction. A tampered approved plan and an empty plan could not replace an active schedule. Foreign, deterministic and undersized risk evidence failed high-risk approval. |
+| Short-budget regression | Applying compact setup equalities to small unrestricted schedules changed the ERP benchmark's nominal weighted tardiness from 849 to 857, and holdout mean weighted tardiness from 2,668.36 to 3,233.65. The final implementation keeps the original small formulation. The final rerun reproduced both original ERP values. |
+| Docker and PostgreSQL | Hosted Docker Compose started PostgreSQL 16 and the API, reached revision 0001, passed Alembic schema drift checks, and completed the persisted scheduling, risk, evidence, what-if, approval, release, replan and export workflow. [CI evidence](https://github.com/vtooooooo/forgeworks/actions/runs/44951353364) |
+
+Ruff, mypy and all 28 pytest cases passed locally. The sole test warning was the existing Starlette HTTPX deprecation. Checksum verification passed for each rerun demo export. [Profiles, reruns and reproduction](final-delivery.md#production-readiness-and-scalability-review)
+
+Production readiness remains unproven. The unrestricted 200-order solve reached its construction guard, bounds are weak on larger time-limited models, and the simulator uses synthetic data and anticipatory reservations. Approval uses one demonstration token. Replans preserve projected shop-floor commitments, and an integration with authoritative actual execution state remains necessary. The optional live copilot provider was outside this verification.
+
+## Original audit
+
 ## Checks and observations
 
 | Area | Adversarial check and observed result |
@@ -23,6 +43,6 @@
 
 ## Verification and release recommendation
 
-The local test suite passed 18 tests, with one dependency deprecation warning. Ruff and mypy passed. SQLite migration upgrade/check and Docker image build passed. The workspace Docker launch was blocked by disk capacity. GitHub Actions built the image, started the SQLite container and verified HTTP health. The PostgreSQL runtime and live optional copilot provider are unverified. [Hosted verification](https://github.com/vtooooooo/forgeworks/actions/runs/44950431508)
+The local test suite passed 18 tests, with one dependency deprecation warning. Ruff and mypy passed. SQLite migration upgrade/check and Docker image build passed. The workspace Docker launch was blocked by disk capacity. GitHub Actions built the image, started the SQLite container and verified HTTP health. PostgreSQL was verified in the follow-up audit above. The live optional copilot provider remains unverified. [Hosted verification](https://github.com/vtooooooo/forgeworks/actions/runs/44950431508)
 
 Release this branch for local evaluation and reproducible synthetic benchmarking. Real production release requires an execution-state integration, factory calibration, authentication and authorization, Docker runtime and PostgreSQL verification, and a larger-scale scheduling strategy.

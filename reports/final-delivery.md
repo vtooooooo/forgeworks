@@ -12,7 +12,65 @@ This delivery implements a versioned planning workflow in Python. It includes fa
 | reports | Raw measurements, demo bundles and adversarial audit |
 | .github/workflows | Bounded lint, type, tests, migration and Docker checks |
 
-## Duration prediction
+## Production-readiness and scalability review
+
+The review increased automated coverage from 18 to **28 passing tests**. It addressed timestamp boundaries, persisted overrun behavior, release validation, CP-SAT model size and replay work per dispatch. The largest repeated end-to-end workflow used 40 orders. A separate 200-order test validated fixed-assignment CP-SAT scheduling for 715 operations. These results support a local or controlled pilot evaluation. Live execution-state reconciliation, audited identities and access policies, and plant-calibrated performance remain prerequisites for deployment.
+
+### CP-SAT construction and search
+
+The default guard is 180,000 candidate pair slots. The 200-order factory produced 888,907 slots because each eligible operation can be a circuit node on several machines, and each machine enumerates immediate predecessors and successors. The guard returns UNKNOWN before allocating the graph. Independently measured timings below used a fresh Linux process per case and a five-second solver budget. The two unrestricted 200-order diagnostics raised the guard in scratch copies. The published runtime guard stays in place. The original build column includes warm-start preparation where used. Updated construction times exclude the separately recorded dispatch preparation. RSS values are process high-water marks in MiB.
+
+| Normal scenario | Variables | Constraints | Build, seconds | Search, seconds | Peak build / search RSS | Status |
+|---|---:|---:|---:|---:|---:|---|
+| Original full, 40 | 42,026 | 80,061 | 0.76 | 5.02 | 122 / 225 | FEASIBLE |
+| Reviewed full, 40 | 42,026 | 41,660 | 0.48 | 5.02 | 110 / 206 | FEASIBLE |
+| Original full, 200, guard raised | 901,739 | 1,783,547 | 12.07 | 4.73 | 798 / 1,751 | UNKNOWN |
+| Reviewed full, 200, guard raised | 901,739 | 899,062 | 9.57 | 4.74 | 503 / 1,166 | UNKNOWN |
+| Reviewed fixed assignments, 200 | 37,037 | 37,368 | 0.43 | 4.78 | 110 / 244 | FEASIBLE |
+
+The fixed-assignment run spent another 1.28 seconds obtaining and independently validating the EDD hint. Its objective of 9,938,920 tied EDD on this trial. This demonstrates resource savings for a narrower search and no objective improvement over dispatch in the measured 200-order case. Full-assignment bounds and fixed-assignment bounds answer different questions. The compact setup equality reduced full constraint counts by about half on the large cases. It worsened a short small-instance trial, so small unrestricted runs keep their original arc implications. [Isolated profiles and regression measurements](readiness/cp-sat-profile.json)
+
+### Reproduced prediction results
+
+The four chronological slices had 1,320, 360, 360 and 360 rows. Their endpoints were disjoint. Independently recomputing absolute errors and conformal coverage reproduced the metrics below. Perturbing only held-out outcomes left fitted predictions, candidate selection and calibration radii identical. The final partition still participates in the promotion gate. [Independent ML reproduction](readiness/ml-reproduction.json)
+
+| Model | MAE, minutes | 90% interval coverage |
+|---|---:|---:|
+| ERP | 24.0766 | 90.8333% |
+| Historical group median | 41.8255 | 91.1111% |
+| Ridge | 14.6008 | 91.3889% |
+| Random forest | 14.3401 | 90.5556% |
+
+### Benchmark and demo reruns
+
+Run `8b19aa23804f48099589cb116cebd3da` completed in 41.30 seconds with 100 tuning and 100 holdout replications. Nominal ERP CP-SAT weighted tardiness was 849, matching the original. The revised short run's buffered ML nominal result was 1,598 versus the original 1,597. Paired holdout results preserved the original tradeoff. C had the highest on-time share and lowest modeled cost. D had the lowest mean weighted tardiness and fewest delayed starts. [Benchmark rerun](readiness/benchmark-results.json)
+
+| Approach | On time | Mean weighted tardiness | Mean cost | Delayed starts |
+|---|---:|---:|---:|---:|
+| A · ERP EDD | 16.50% | 2,924.67 | 1,617.92 | 45.80% |
+| B · ERP CP-SAT | 17.33% | 2,668.36 | 1,533.07 | 47.55% |
+| C · ML CP-SAT | 23.17% | 2,602.33 | 1,500.12 | 48.80% |
+| D · Simulation-selected buffered ML CP-SAT | 16.00% | 2,553.59 | 1,548.65 | 22.05% |
+
+The 40-order demo completed in 50.65 seconds, including 22.20 seconds for simulation. The original, extra-shift and breakdown runs used 300 replications each. The shift left paired outcomes identical. The replan preserved one started operation, moved 137 operations, and was approved and released. The original and replan mean on-time shares were 98.0% and 96.4% under their respective factory inputs. Observed runtime is a single measurement. Both earlier and current demo outcomes matched for these inputs. [Original schedule](readiness/demo/original.zip) · [Extra-shift schedule](readiness/demo/extra-shift.zip) · [Released replan](readiness/demo/rescheduled.zip) · [Run IDs and paired intervals](readiness/demo/demo-report.json)
+
+Hosted Docker Compose brought up PostgreSQL 16 and the API, migrated to Alembic revision `0001`, and passed `alembic check`. The workflow trained and served a model, optimized and validated a schedule, simulated it, retrieved persisted copilot evidence, ran an isolated what-if, released a breakdown replan, and validated its export. The original released payload remained unchanged. [Hosted Compose result](https://github.com/vtooooooo/forgeworks/actions/runs/44951353364)
+
+```bash
+python -m forgeworks generate --scenario normal --seed 42 --count 200
+python -m forgeworks optimize --seconds 5 --assignment-scope dispatch
+export FORGEWORKS_PLANNER_TOKEN=local-demo-only
+python examples/demo.py --output demo-output/readiness --runs 300 --seconds 8
+python -m forgeworks benchmark --count 6 --runs 100 --seconds 5 --scale \
+  --output demo-output/readiness/benchmark-results.json
+pytest -q
+```
+
+## Original delivery measurements
+
+The following sections preserve the original evaluation for comparison.
+
+### Duration prediction
 
 Benchmark run `66f667e2aeaf49b399ac489d8fce0580` used 2,400 chronological synthetic executions with 360 final quality-gate rows. The factory contains 16 machines, 50 products and 3 materials. Minutes are the error and interval-width units. [Raw benchmark data](benchmark-results.json)
 
@@ -72,7 +130,7 @@ The copilot record contains a priority order's due date, completion and stage-by
 
 ## Verification and artifacts
 
-The test suite passed 18 tests. The SQLite migration, lint, type checks and image build passed. The workspace built the image with its CA bundle as a BuildKit secret, then exhausted disk space preparing its container. GitHub Actions independently built and ran the SQLite-backed image and confirmed HTTP health. PostgreSQL end-to-end operation remains unverified. [Hosted verification](https://github.com/vtooooooo/forgeworks/actions/runs/44950431508) · [Adversarial audit](final-adversarial-validation.md)
+The test suite passed 18 tests. The SQLite migration, lint, type checks and image build passed. The workspace built the image with its CA bundle as a BuildKit secret, then exhausted disk space preparing its container. GitHub Actions independently built and ran the SQLite-backed image and confirmed HTTP health. PostgreSQL was verified in the follow-up review above. [Hosted verification](https://github.com/vtooooooo/forgeworks/actions/runs/44950431508) · [Adversarial audit](final-adversarial-validation.md)
 
 Each ZIP includes timestamped production, assignment, setup, order and material data, predictions, validation, risk, applicable comparisons and approvals, plus a SHA-256 manifest. [Original schedule](demo/original.zip) · [Extra shift](demo/extra-shift.zip) · [Released replan](demo/rescheduled.zip)
 
