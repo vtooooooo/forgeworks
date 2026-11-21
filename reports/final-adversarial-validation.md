@@ -23,6 +23,6 @@
 
 ## Verification and release recommendation
 
-The local test suite passed 18 tests, with one dependency deprecation warning. Ruff and mypy passed. SQLite migration upgrade/check and Docker image build passed. Docker runtime smoke was blocked by disk capacity. The PostgreSQL runtime and live optional copilot provider are unverified.
+The local test suite passed 18 tests, with one dependency deprecation warning. Ruff and mypy passed. SQLite migration upgrade/check and Docker image build passed. The workspace Docker launch was blocked by disk capacity. GitHub Actions built the image, started the SQLite container and verified HTTP health. The PostgreSQL runtime and live optional copilot provider are unverified. [Hosted verification](https://github.com/vtooooooo/forgeworks/actions/runs/44950431508)
 
 Release this branch for local evaluation and reproducible synthetic benchmarking. Real production release requires an execution-state integration, factory calibration, authentication and authorization, Docker runtime and PostgreSQL verification, and a larger-scale scheduling strategy.

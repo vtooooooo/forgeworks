@@ -72,7 +72,7 @@ The copilot record contains a priority order's due date, completion and stage-by
 
 ## Verification and artifacts
 
-The test suite passed 18 tests. The SQLite migration, lint, type checks and image build passed. The runner exhausted disk space preparing the Docker container, so its runtime and PostgreSQL end-to-end operation remain unverified. The container build used the runner's CA bundle as a BuildKit secret. [Adversarial audit](final-adversarial-validation.md)
+The test suite passed 18 tests. The SQLite migration, lint, type checks and image build passed. The workspace built the image with its CA bundle as a BuildKit secret, then exhausted disk space preparing its container. GitHub Actions independently built and ran the SQLite-backed image and confirmed HTTP health. PostgreSQL end-to-end operation remains unverified. [Hosted verification](https://github.com/vtooooooo/forgeworks/actions/runs/44950431508) · [Adversarial audit](final-adversarial-validation.md)
 
 Each ZIP includes timestamped production, assignment, setup, order and material data, predictions, validation, risk, applicable comparisons and approvals, plus a SHA-256 manifest. [Original schedule](demo/original.zip) · [Extra shift](demo/extra-shift.zip) · [Released replan](demo/rescheduled.zip)
 
@@ -92,6 +92,6 @@ alembic check
 docker build -t forgeworks:local .
 ```
 
-Feature branch `feature/forgeworks-planning-platform` was based on main at `6d3d1cdf091a1382e153375dda80e88ed6c914db`. The [GitHub comparison](https://github.com/vtooooooo/forgeworks/compare/main...feature/forgeworks-planning-platform) identifies the delivered commits.
+Implementation commit `19d8992d591700c365f718f69c7184a4c9d13339` was based on main at `6d3d1cdf091a1382e153375dda80e88ed6c914db`. [Draft PR](https://github.com/vtooooooo/forgeworks/pull/1) · [Feature branch comparison](https://github.com/vtooooooo/forgeworks/compare/main...feature/forgeworks-planning-platform)
 
 The implementation is suitable for a local synthetic-planning evaluation. [Known limitations](../docs/limitations.md)
