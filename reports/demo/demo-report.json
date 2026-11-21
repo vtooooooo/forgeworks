@@ -1,0 +1,1970 @@
+{
+  "orders": 40,
+  "machines": 16,
+  "products": 50,
+  "dataset": "d3cce90fa15a0a6ace9eed1125acb5712023621ca9709200066ce6cee2ca9af0",
+  "model": "25b9b94df0854a08a87641bc86ea23f9",
+  "history_rows": 2400,
+  "model_eligible": true,
+  "sizing_attempts": [
+    {
+      "orders": 200,
+      "schedule": "3840cddd5baa42d7b12c778a68917b27",
+      "status": "UNKNOWN",
+      "detail": "Circuit construction budget exceeded before search",
+      "nominal_seconds": 0.0064854570000534295
+    },
+    {
+      "orders": 40,
+      "schedule": "9f640ca3a20c470cada4d2011a421185",
+      "status": "FEASIBLE",
+      "detail": "",
+      "nominal_seconds": 9.140030757999966,
+      "what_if": {
+        "status": "FEASIBLE",
+        "schedule": "ac2fcd3e91a741f5917afb4b00598211"
+      },
+      "replan": {
+        "status": "FEASIBLE",
+        "schedule": "245c0ace6e004733b951c9caef946ba6"
+      }
+    }
+  ],
+  "elapsed_seconds": 63.46158367599992,
+  "simulation_seconds": 33.471752105000064,
+  "replications_per_alternative": 300,
+  "seed": 577,
+  "original": "9f640ca3a20c470cada4d2011a421185",
+  "extra_shift": {
+    "parent": "9f640ca3a20c470cada4d2011a421185",
+    "schedule": "ac2fcd3e91a741f5917afb4b00598211",
+    "valid": true,
+    "status": "FEASIBLE",
+    "change": {
+      "kind": "overtime",
+      "machine": "M-02",
+      "start": 7200,
+      "end": 7680,
+      "index": 0
+    },
+    "difference": {
+      "moved": [],
+      "reassignments": 0,
+      "absolute_movement_minutes": 0,
+      "added": [],
+      "removed": [],
+      "completion_change": {
+        "ORD-101": 0,
+        "ORD-102": 0,
+        "ORD-103": 0,
+        "ORD-104": 0,
+        "ORD-105": 0,
+        "ORD-106": 0,
+        "ORD-107": 0,
+        "ORD-108": 0,
+        "ORD-109": 0,
+        "ORD-110": 0,
+        "ORD-111": 0,
+        "ORD-112": 0,
+        "ORD-113": 0,
+        "ORD-114": 0,
+        "ORD-115": 0,
+        "ORD-116": 0,
+        "ORD-117": 0,
+        "ORD-118": 0,
+        "ORD-119": 0,
+        "ORD-120": 0,
+        "ORD-121": 0,
+        "ORD-122": 0,
+        "ORD-123": 0,
+        "ORD-124": 0,
+        "ORD-125": 0,
+        "ORD-126": 0,
+        "ORD-127": 0,
+        "ORD-128": 0,
+        "ORD-129": 0,
+        "ORD-130": 0,
+        "ORD-131": 0,
+        "ORD-132": 0,
+        "ORD-133": 0,
+        "ORD-134": 0,
+        "ORD-135": 0,
+        "ORD-136": 0,
+        "ORD-137": 0,
+        "ORD-138": 0,
+        "ORD-139": 0,
+        "ORD-140": 0
+      },
+      "additional_tardiness": 0,
+      "seconds": 9.03830938200008
+    },
+    "protected": 0,
+    "as_of": null,
+    "freeze_until": null,
+    "validation": []
+  },
+  "rescheduled": {
+    "parent": "9f640ca3a20c470cada4d2011a421185",
+    "schedule": "245c0ace6e004733b951c9caef946ba6",
+    "valid": true,
+    "status": "FEASIBLE",
+    "change": {
+      "kind": "breakdown",
+      "machine": "M-03",
+      "start": 58,
+      "end": 298,
+      "index": 0
+    },
+    "difference": {
+      "moved": [
+        {
+          "order": "ORD-101",
+          "stage": 0,
+          "minutes": 0,
+          "old_machine": "M-03",
+          "new_machine": "M-02"
+        },
+        {
+          "order": "ORD-101",
+          "stage": 1,
+          "minutes": 4,
+          "old_machine": "M-08",
+          "new_machine": "M-08"
+        },
+        {
+          "order": "ORD-101",
+          "stage": 2,
+          "minutes": 4,
+          "old_machine": "M-12",
+          "new_machine": "M-12"
+        },
+        {
+          "order": "ORD-102",
+          "stage": 0,
+          "minutes": 31,
+          "old_machine": "M-04",
+          "new_machine": "M-04"
+        },
+        {
+          "order": "ORD-102",
+          "stage": 1,
+          "minutes": 28,
+          "old_machine": "M-09",
+          "new_machine": "M-05"
+        },
+        {
+          "order": "ORD-102",
+          "stage": 2,
+          "minutes": 28,
+          "old_machine": "M-10",
+          "new_machine": "M-10"
+        },
+        {
+          "order": "ORD-102",
+          "stage": 3,
+          "minutes": 57,
+          "old_machine": "M-14",
+          "new_machine": "M-15"
+        },
+        {
+          "order": "ORD-103",
+          "stage": 0,
+          "minutes": 50,
+          "old_machine": "M-01",
+          "new_machine": "M-02"
+        },
+        {
+          "order": "ORD-103",
+          "stage": 1,
+          "minutes": 54,
+          "old_machine": "M-07",
+          "new_machine": "M-07"
+        },
+        {
+          "order": "ORD-103",
+          "stage": 2,
+          "minutes": 89,
+          "old_machine": "M-09",
+          "new_machine": "M-07"
+        },
+        {
+          "order": "ORD-103",
+          "stage": 3,
+          "minutes": 0,
+          "old_machine": "M-16",
+          "new_machine": "M-14"
+        },
+        {
+          "order": "ORD-103",
+          "stage": 4,
+          "minutes": 36,
+          "old_machine": "M-16",
+          "new_machine": "M-16"
+        },
+        {
+          "order": "ORD-104",
+          "stage": 0,
+          "minutes": 12,
+          "old_machine": "M-03",
+          "new_machine": "M-04"
+        },
+        {
+          "order": "ORD-104",
+          "stage": 3,
+          "minutes": 31,
+          "old_machine": "M-12",
+          "new_machine": "M-12"
+        },
+        {
+          "order": "ORD-104",
+          "stage": 4,
+          "minutes": 22,
+          "old_machine": "M-13",
+          "new_machine": "M-12"
+        },
+        {
+          "order": "ORD-105",
+          "stage": 0,
+          "minutes": 28,
+          "old_machine": "M-04",
+          "new_machine": "M-03"
+        },
+        {
+          "order": "ORD-105",
+          "stage": 1,
+          "minutes": -11,
+          "old_machine": "M-05",
+          "new_machine": "M-06"
+        },
+        {
+          "order": "ORD-105",
+          "stage": 2,
+          "minutes": 28,
+          "old_machine": "M-14",
+          "new_machine": "M-14"
+        },
+        {
+          "order": "ORD-106",
+          "stage": 0,
+          "minutes": 33,
+          "old_machine": "M-02",
+          "new_machine": "M-01"
+        },
+        {
+          "order": "ORD-106",
+          "stage": 1,
+          "minutes": -4,
+          "old_machine": "M-06",
+          "new_machine": "M-06"
+        },
+        {
+          "order": "ORD-106",
+          "stage": 2,
+          "minutes": -4,
+          "old_machine": "M-06",
+          "new_machine": "M-06"
+        },
+        {
+          "order": "ORD-106",
+          "stage": 3,
+          "minutes": -32,
+          "old_machine": "M-16",
+          "new_machine": "M-13"
+        },
+        {
+          "order": "ORD-107",
+          "stage": 0,
+          "minutes": 104,
+          "old_machine": "M-02",
+          "new_machine": "M-01"
+        },
+        {
+          "order": "ORD-107",
+          "stage": 1,
+          "minutes": 36,
+          "old_machine": "M-06",
+          "new_machine": "M-09"
+        },
+        {
+          "order": "ORD-107",
+          "stage": 2,
+          "minutes": 92,
+          "old_machine": "M-12",
+          "new_machine": "M-15"
+        },
+        {
+          "order": "ORD-108",
+          "stage": 0,
+          "minutes": 10,
+          "old_machine": "M-02",
+          "new_machine": "M-02"
+        },
+        {
+          "order": "ORD-108",
+          "stage": 1,
+          "minutes": 29,
+          "old_machine": "M-07",
+          "new_machine": "M-07"
+        },
+        {
+          "order": "ORD-108",
+          "stage": 2,
+          "minutes": 13,
+          "old_machine": "M-15",
+          "new_machine": "M-13"
+        },
+        {
+          "order": "ORD-109",
+          "stage": 0,
+          "minutes": 14,
+          "old_machine": "M-03",
+          "new_machine": "M-04"
+        },
+        {
+          "order": "ORD-109",
+          "stage": 1,
+          "minutes": 18,
+          "old_machine": "M-08",
+          "new_machine": "M-09"
+        },
+        {
+          "order": "ORD-109",
+          "stage": 2,
+          "minutes": 28,
+          "old_machine": "M-14",
+          "new_machine": "M-14"
+        },
+        {
+          "order": "ORD-110",
+          "stage": 0,
+          "minutes": 37,
+          "old_machine": "M-03",
+          "new_machine": "M-03"
+        },
+        {
+          "order": "ORD-110",
+          "stage": 1,
+          "minutes": 28,
+          "old_machine": "M-09",
+          "new_machine": "M-05"
+        },
+        {
+          "order": "ORD-110",
+          "stage": 2,
+          "minutes": 34,
+          "old_machine": "M-13",
+          "new_machine": "M-16"
+        },
+        {
+          "order": "ORD-111",
+          "stage": 0,
+          "minutes": 0,
+          "old_machine": "M-03",
+          "new_machine": "M-04"
+        },
+        {
+          "order": "ORD-111",
+          "stage": 1,
+          "minutes": 3,
+          "old_machine": "M-08",
+          "new_machine": "M-08"
+        },
+        {
+          "order": "ORD-111",
+          "stage": 2,
+          "minutes": 3,
+          "old_machine": "M-16",
+          "new_machine": "M-16"
+        },
+        {
+          "order": "ORD-112",
+          "stage": 0,
+          "minutes": 211,
+          "old_machine": "M-02",
+          "new_machine": "M-03"
+        },
+        {
+          "order": "ORD-112",
+          "stage": 1,
+          "minutes": 187,
+          "old_machine": "M-09",
+          "new_machine": "M-06"
+        },
+        {
+          "order": "ORD-112",
+          "stage": 2,
+          "minutes": 259,
+          "old_machine": "M-14",
+          "new_machine": "M-12"
+        },
+        {
+          "order": "ORD-113",
+          "stage": 0,
+          "minutes": 37,
+          "old_machine": "M-03",
+          "new_machine": "M-03"
+        },
+        {
+          "order": "ORD-113",
+          "stage": 1,
+          "minutes": 29,
+          "old_machine": "M-05",
+          "new_machine": "M-09"
+        },
+        {
+          "order": "ORD-113",
+          "stage": 2,
+          "minutes": 31,
+          "old_machine": "M-11",
+          "new_machine": "M-11"
+        },
+        {
+          "order": "ORD-113",
+          "stage": 3,
+          "minutes": 6,
+          "old_machine": "M-12",
+          "new_machine": "M-14"
+        },
+        {
+          "order": "ORD-114",
+          "stage": 0,
+          "minutes": 40,
+          "old_machine": "M-02",
+          "new_machine": "M-01"
+        },
+        {
+          "order": "ORD-114",
+          "stage": 1,
+          "minutes": 129,
+          "old_machine": "M-09",
+          "new_machine": "M-09"
+        },
+        {
+          "order": "ORD-114",
+          "stage": 2,
+          "minutes": -5,
+          "old_machine": "M-12",
+          "new_machine": "M-16"
+        },
+        {
+          "order": "ORD-115",
+          "stage": 0,
+          "minutes": 16,
+          "old_machine": "M-01",
+          "new_machine": "M-02"
+        },
+        {
+          "order": "ORD-115",
+          "stage": 1,
+          "minutes": 11,
+          "old_machine": "M-06",
+          "new_machine": "M-07"
+        },
+        {
+          "order": "ORD-115",
+          "stage": 2,
+          "minutes": 12,
+          "old_machine": "M-11",
+          "new_machine": "M-11"
+        },
+        {
+          "order": "ORD-115",
+          "stage": 3,
+          "minutes": -7,
+          "old_machine": "M-13",
+          "new_machine": "M-16"
+        },
+        {
+          "order": "ORD-116",
+          "stage": 0,
+          "minutes": 17,
+          "old_machine": "M-03",
+          "new_machine": "M-02"
+        },
+        {
+          "order": "ORD-116",
+          "stage": 1,
+          "minutes": 14,
+          "old_machine": "M-08",
+          "new_machine": "M-11"
+        },
+        {
+          "order": "ORD-116",
+          "stage": 2,
+          "minutes": 14,
+          "old_machine": "M-08",
+          "new_machine": "M-11"
+        },
+        {
+          "order": "ORD-116",
+          "stage": 3,
+          "minutes": 0,
+          "old_machine": "M-13",
+          "new_machine": "M-12"
+        },
+        {
+          "order": "ORD-116",
+          "stage": 4,
+          "minutes": 34,
+          "old_machine": "M-13",
+          "new_machine": "M-16"
+        },
+        {
+          "order": "ORD-117",
+          "stage": 0,
+          "minutes": 88,
+          "old_machine": "M-02",
+          "new_machine": "M-04"
+        },
+        {
+          "order": "ORD-117",
+          "stage": 1,
+          "minutes": 39,
+          "old_machine": "M-05",
+          "new_machine": "M-07"
+        },
+        {
+          "order": "ORD-117",
+          "stage": 2,
+          "minutes": 58,
+          "old_machine": "M-05",
+          "new_machine": "M-08"
+        },
+        {
+          "order": "ORD-117",
+          "stage": 3,
+          "minutes": 27,
+          "old_machine": "M-12",
+          "new_machine": "M-15"
+        },
+        {
+          "order": "ORD-118",
+          "stage": 0,
+          "minutes": 9,
+          "old_machine": "M-03",
+          "new_machine": "M-04"
+        },
+        {
+          "order": "ORD-118",
+          "stage": 3,
+          "minutes": 0,
+          "old_machine": "M-15",
+          "new_machine": "M-13"
+        },
+        {
+          "order": "ORD-118",
+          "stage": 4,
+          "minutes": 1,
+          "old_machine": "M-15",
+          "new_machine": "M-13"
+        },
+        {
+          "order": "ORD-119",
+          "stage": 0,
+          "minutes": 15,
+          "old_machine": "M-02",
+          "new_machine": "M-01"
+        },
+        {
+          "order": "ORD-119",
+          "stage": 1,
+          "minutes": 556,
+          "old_machine": "M-06",
+          "new_machine": "M-08"
+        },
+        {
+          "order": "ORD-119",
+          "stage": 2,
+          "minutes": 76,
+          "old_machine": "M-08",
+          "new_machine": "M-08"
+        },
+        {
+          "order": "ORD-119",
+          "stage": 3,
+          "minutes": -14,
+          "old_machine": "M-13",
+          "new_machine": "M-13"
+        },
+        {
+          "order": "ORD-120",
+          "stage": 0,
+          "minutes": 28,
+          "old_machine": "M-04",
+          "new_machine": "M-03"
+        },
+        {
+          "order": "ORD-120",
+          "stage": 1,
+          "minutes": 24,
+          "old_machine": "M-09",
+          "new_machine": "M-08"
+        },
+        {
+          "order": "ORD-120",
+          "stage": 2,
+          "minutes": 15,
+          "old_machine": "M-15",
+          "new_machine": "M-12"
+        },
+        {
+          "order": "ORD-121",
+          "stage": 0,
+          "minutes": -3,
+          "old_machine": "M-03",
+          "new_machine": "M-02"
+        },
+        {
+          "order": "ORD-121",
+          "stage": 1,
+          "minutes": 40,
+          "old_machine": "M-06",
+          "new_machine": "M-05"
+        },
+        {
+          "order": "ORD-121",
+          "stage": 2,
+          "minutes": -7,
+          "old_machine": "M-15",
+          "new_machine": "M-16"
+        },
+        {
+          "order": "ORD-122",
+          "stage": 0,
+          "minutes": 37,
+          "old_machine": "M-02",
+          "new_machine": "M-01"
+        },
+        {
+          "order": "ORD-122",
+          "stage": 1,
+          "minutes": 35,
+          "old_machine": "M-09",
+          "new_machine": "M-07"
+        },
+        {
+          "order": "ORD-122",
+          "stage": 2,
+          "minutes": 565,
+          "old_machine": "M-14",
+          "new_machine": "M-13"
+        },
+        {
+          "order": "ORD-123",
+          "stage": 0,
+          "minutes": 12,
+          "old_machine": "M-03",
+          "new_machine": "M-04"
+        },
+        {
+          "order": "ORD-123",
+          "stage": 1,
+          "minutes": 14,
+          "old_machine": "M-07",
+          "new_machine": "M-05"
+        },
+        {
+          "order": "ORD-123",
+          "stage": 2,
+          "minutes": -6,
+          "old_machine": "M-10",
+          "new_machine": "M-05"
+        },
+        {
+          "order": "ORD-123",
+          "stage": 3,
+          "minutes": 16,
+          "old_machine": "M-16",
+          "new_machine": "M-13"
+        },
+        {
+          "order": "ORD-124",
+          "stage": 0,
+          "minutes": 31,
+          "old_machine": "M-04",
+          "new_machine": "M-04"
+        },
+        {
+          "order": "ORD-124",
+          "stage": 1,
+          "minutes": 2,
+          "old_machine": "M-05",
+          "new_machine": "M-07"
+        },
+        {
+          "order": "ORD-124",
+          "stage": 2,
+          "minutes": -58,
+          "old_machine": "M-16",
+          "new_machine": "M-14"
+        },
+        {
+          "order": "ORD-125",
+          "stage": 0,
+          "minutes": 0,
+          "old_machine": "M-04",
+          "new_machine": "M-01"
+        },
+        {
+          "order": "ORD-125",
+          "stage": 1,
+          "minutes": 2,
+          "old_machine": "M-06",
+          "new_machine": "M-09"
+        },
+        {
+          "order": "ORD-125",
+          "stage": 2,
+          "minutes": -9,
+          "old_machine": "M-12",
+          "new_machine": "M-14"
+        },
+        {
+          "order": "ORD-126",
+          "stage": 0,
+          "minutes": 40,
+          "old_machine": "M-01",
+          "new_machine": "M-01"
+        },
+        {
+          "order": "ORD-126",
+          "stage": 1,
+          "minutes": 10,
+          "old_machine": "M-08",
+          "new_machine": "M-08"
+        },
+        {
+          "order": "ORD-126",
+          "stage": 2,
+          "minutes": -33,
+          "old_machine": "M-16",
+          "new_machine": "M-12"
+        },
+        {
+          "order": "ORD-127",
+          "stage": 0,
+          "minutes": 36,
+          "old_machine": "M-02",
+          "new_machine": "M-01"
+        },
+        {
+          "order": "ORD-127",
+          "stage": 1,
+          "minutes": 69,
+          "old_machine": "M-09",
+          "new_machine": "M-10"
+        },
+        {
+          "order": "ORD-127",
+          "stage": 2,
+          "minutes": 44,
+          "old_machine": "M-12",
+          "new_machine": "M-15"
+        },
+        {
+          "order": "ORD-128",
+          "stage": 0,
+          "minutes": 54,
+          "old_machine": "M-01",
+          "new_machine": "M-04"
+        },
+        {
+          "order": "ORD-128",
+          "stage": 1,
+          "minutes": 30,
+          "old_machine": "M-07",
+          "new_machine": "M-09"
+        },
+        {
+          "order": "ORD-129",
+          "stage": 0,
+          "minutes": 0,
+          "old_machine": "M-04",
+          "new_machine": "M-01"
+        },
+        {
+          "order": "ORD-129",
+          "stage": 1,
+          "minutes": 4,
+          "old_machine": "M-11",
+          "new_machine": "M-11"
+        },
+        {
+          "order": "ORD-129",
+          "stage": 2,
+          "minutes": 4,
+          "old_machine": "M-11",
+          "new_machine": "M-11"
+        },
+        {
+          "order": "ORD-129",
+          "stage": 3,
+          "minutes": 181,
+          "old_machine": "M-16",
+          "new_machine": "M-15"
+        },
+        {
+          "order": "ORD-130",
+          "stage": 0,
+          "minutes": 51,
+          "old_machine": "M-01",
+          "new_machine": "M-04"
+        },
+        {
+          "order": "ORD-130",
+          "stage": 1,
+          "minutes": 38,
+          "old_machine": "M-10",
+          "new_machine": "M-10"
+        },
+        {
+          "order": "ORD-130",
+          "stage": 2,
+          "minutes": 38,
+          "old_machine": "M-10",
+          "new_machine": "M-10"
+        },
+        {
+          "order": "ORD-130",
+          "stage": 3,
+          "minutes": -5,
+          "old_machine": "M-13",
+          "new_machine": "M-16"
+        },
+        {
+          "order": "ORD-131",
+          "stage": 0,
+          "minutes": 31,
+          "old_machine": "M-04",
+          "new_machine": "M-04"
+        },
+        {
+          "order": "ORD-131",
+          "stage": 3,
+          "minutes": 11,
+          "old_machine": "M-14",
+          "new_machine": "M-12"
+        },
+        {
+          "order": "ORD-132",
+          "stage": 0,
+          "minutes": 9,
+          "old_machine": "M-04",
+          "new_machine": "M-03"
+        },
+        {
+          "order": "ORD-132",
+          "stage": 1,
+          "minutes": 47,
+          "old_machine": "M-05",
+          "new_machine": "M-10"
+        },
+        {
+          "order": "ORD-132",
+          "stage": 2,
+          "minutes": 29,
+          "old_machine": "M-10",
+          "new_machine": "M-10"
+        },
+        {
+          "order": "ORD-132",
+          "stage": 3,
+          "minutes": -549,
+          "old_machine": "M-15",
+          "new_machine": "M-14"
+        },
+        {
+          "order": "ORD-132",
+          "stage": 4,
+          "minutes": -53,
+          "old_machine": "M-15",
+          "new_machine": "M-15"
+        },
+        {
+          "order": "ORD-133",
+          "stage": 0,
+          "minutes": 102,
+          "old_machine": "M-01",
+          "new_machine": "M-03"
+        },
+        {
+          "order": "ORD-133",
+          "stage": 1,
+          "minutes": 9,
+          "old_machine": "M-07",
+          "new_machine": "M-06"
+        },
+        {
+          "order": "ORD-133",
+          "stage": 2,
+          "minutes": 9,
+          "old_machine": "M-10",
+          "new_machine": "M-10"
+        },
+        {
+          "order": "ORD-133",
+          "stage": 3,
+          "minutes": 16,
+          "old_machine": "M-16",
+          "new_machine": "M-13"
+        },
+        {
+          "order": "ORD-134",
+          "stage": 0,
+          "minutes": 30,
+          "old_machine": "M-01",
+          "new_machine": "M-03"
+        },
+        {
+          "order": "ORD-134",
+          "stage": 1,
+          "minutes": 47,
+          "old_machine": "M-11",
+          "new_machine": "M-08"
+        },
+        {
+          "order": "ORD-134",
+          "stage": 2,
+          "minutes": 50,
+          "old_machine": "M-11",
+          "new_machine": "M-08"
+        },
+        {
+          "order": "ORD-134",
+          "stage": 3,
+          "minutes": 3,
+          "old_machine": "M-12",
+          "new_machine": "M-14"
+        },
+        {
+          "order": "ORD-135",
+          "stage": 0,
+          "minutes": 19,
+          "old_machine": "M-03",
+          "new_machine": "M-02"
+        },
+        {
+          "order": "ORD-135",
+          "stage": 1,
+          "minutes": 28,
+          "old_machine": "M-10",
+          "new_machine": "M-10"
+        },
+        {
+          "order": "ORD-135",
+          "stage": 2,
+          "minutes": 32,
+          "old_machine": "M-12",
+          "new_machine": "M-14"
+        },
+        {
+          "order": "ORD-136",
+          "stage": 0,
+          "minutes": 31,
+          "old_machine": "M-04",
+          "new_machine": "M-04"
+        },
+        {
+          "order": "ORD-136",
+          "stage": 1,
+          "minutes": 31,
+          "old_machine": "M-05",
+          "new_machine": "M-09"
+        },
+        {
+          "order": "ORD-136",
+          "stage": 2,
+          "minutes": 32,
+          "old_machine": "M-11",
+          "new_machine": "M-11"
+        },
+        {
+          "order": "ORD-136",
+          "stage": 3,
+          "minutes": 18,
+          "old_machine": "M-14",
+          "new_machine": "M-15"
+        },
+        {
+          "order": "ORD-136",
+          "stage": 4,
+          "minutes": -18,
+          "old_machine": "M-15",
+          "new_machine": "M-15"
+        },
+        {
+          "order": "ORD-137",
+          "stage": 0,
+          "minutes": 0,
+          "old_machine": "M-04",
+          "new_machine": "M-01"
+        },
+        {
+          "order": "ORD-137",
+          "stage": 1,
+          "minutes": 27,
+          "old_machine": "M-08",
+          "new_machine": "M-06"
+        },
+        {
+          "order": "ORD-137",
+          "stage": 2,
+          "minutes": 19,
+          "old_machine": "M-13",
+          "new_machine": "M-12"
+        },
+        {
+          "order": "ORD-138",
+          "stage": 3,
+          "minutes": 0,
+          "old_machine": "M-15",
+          "new_machine": "M-13"
+        },
+        {
+          "order": "ORD-138",
+          "stage": 4,
+          "minutes": 0,
+          "old_machine": "M-15",
+          "new_machine": "M-13"
+        },
+        {
+          "order": "ORD-139",
+          "stage": 0,
+          "minutes": 12,
+          "old_machine": "M-01",
+          "new_machine": "M-02"
+        },
+        {
+          "order": "ORD-139",
+          "stage": 1,
+          "minutes": 37,
+          "old_machine": "M-07",
+          "new_machine": "M-11"
+        },
+        {
+          "order": "ORD-139",
+          "stage": 3,
+          "minutes": 28,
+          "old_machine": "M-14",
+          "new_machine": "M-14"
+        },
+        {
+          "order": "ORD-139",
+          "stage": 4,
+          "minutes": 17,
+          "old_machine": "M-16",
+          "new_machine": "M-15"
+        },
+        {
+          "order": "ORD-140",
+          "stage": 0,
+          "minutes": 13,
+          "old_machine": "M-01",
+          "new_machine": "M-02"
+        },
+        {
+          "order": "ORD-140",
+          "stage": 1,
+          "minutes": 30,
+          "old_machine": "M-07",
+          "new_machine": "M-06"
+        },
+        {
+          "order": "ORD-140",
+          "stage": 2,
+          "minutes": 30,
+          "old_machine": "M-12",
+          "new_machine": "M-13"
+        }
+      ],
+      "reassignments": 99,
+      "absolute_movement_minutes": 5935,
+      "added": [],
+      "removed": [],
+      "completion_change": {
+        "ORD-101": 4,
+        "ORD-102": 18,
+        "ORD-103": 36,
+        "ORD-104": 41,
+        "ORD-105": 28,
+        "ORD-106": -32,
+        "ORD-107": 76,
+        "ORD-108": 13,
+        "ORD-109": 28,
+        "ORD-110": 34,
+        "ORD-111": 3,
+        "ORD-112": 247,
+        "ORD-113": 21,
+        "ORD-114": -18,
+        "ORD-115": -9,
+        "ORD-116": 34,
+        "ORD-117": 7,
+        "ORD-118": 1,
+        "ORD-119": -14,
+        "ORD-120": 36,
+        "ORD-121": -7,
+        "ORD-122": 536,
+        "ORD-123": 16,
+        "ORD-124": -33,
+        "ORD-125": -2,
+        "ORD-126": 0,
+        "ORD-127": 27,
+        "ORD-128": 0,
+        "ORD-129": 182,
+        "ORD-130": -5,
+        "ORD-131": 4,
+        "ORD-132": -53,
+        "ORD-133": 16,
+        "ORD-134": 6,
+        "ORD-135": 37,
+        "ORD-136": -18,
+        "ORD-137": 33,
+        "ORD-138": 0,
+        "ORD-139": 18,
+        "ORD-140": 22
+      },
+      "additional_tardiness": 0,
+      "seconds": 8.665523538000002
+    },
+    "protected": 1,
+    "as_of": 58,
+    "freeze_until": 58,
+    "validation": []
+  },
+  "approval": {
+    "schedule": "245c0ace6e004733b951c9caef946ba6",
+    "action": "approve",
+    "identity": "demo-planner",
+    "at": "2026-11-21T21:09:07.322677+00:00",
+    "simulation": "94aca21db56a48bf9dd9f79955586de5",
+    "state": "APPROVED",
+    "validated": true
+  },
+  "release": {
+    "schedule": "245c0ace6e004733b951c9caef946ba6",
+    "action": "release",
+    "identity": "demo-planner",
+    "at": "2026-11-21T21:09:07.330127+00:00",
+    "simulation": null,
+    "state": "RELEASED",
+    "validated": true
+  },
+  "explanation": {
+    "classification": "verified_record",
+    "evidence": {
+      "schedule": "9f640ca3a20c470cada4d2011a421185",
+      "dataset": "d3cce90fa15a0a6ace9eed1125acb5712023621ca9709200066ce6cee2ca9af0",
+      "solver_status": "FEASIBLE",
+      "model": "25b9b94df0854a08a87641bc86ea23f9",
+      "violations": []
+    },
+    "result": {
+      "order": {
+        "id": "ORD-129",
+        "product": "SKU-08",
+        "quantity": 19,
+        "release": 125,
+        "due": 604,
+        "priority": 3,
+        "customer": "standard",
+        "status": "open",
+        "hard_due": false
+      },
+      "completion": 420,
+      "tardiness": 0,
+      "timeline": [
+        {
+          "operation": {
+            "order": "ORD-129",
+            "stage": 0,
+            "machine": "M-04",
+            "setup_start": 125,
+            "start": 130,
+            "end": 182
+          },
+          "wait_after_release_or_predecessor": 0,
+          "preceding_machine_operation": null
+        },
+        {
+          "operation": {
+            "order": "ORD-129",
+            "stage": 1,
+            "machine": "M-11",
+            "setup_start": 182,
+            "start": 187,
+            "end": 249
+          },
+          "wait_after_release_or_predecessor": 0,
+          "preceding_machine_operation": null
+        },
+        {
+          "operation": {
+            "order": "ORD-129",
+            "stage": 2,
+            "machine": "M-11",
+            "setup_start": 249,
+            "start": 249,
+            "end": 323
+          },
+          "wait_after_release_or_predecessor": 0,
+          "preceding_machine_operation": {
+            "order": "ORD-129",
+            "stage": 1,
+            "machine": "M-11",
+            "setup_start": 182,
+            "start": 187,
+            "end": 249
+          }
+        },
+        {
+          "operation": {
+            "order": "ORD-129",
+            "stage": 3,
+            "machine": "M-16",
+            "setup_start": 323,
+            "start": 334,
+            "end": 420
+          },
+          "wait_after_release_or_predecessor": 0,
+          "preceding_machine_operation": {
+            "order": "ORD-111",
+            "stage": 2,
+            "machine": "M-16",
+            "setup_start": 178,
+            "start": 183,
+            "end": 258
+          }
+        }
+      ],
+      "material": "aluminum",
+      "classification": "observed_timeline"
+    }
+  },
+  "risk_evidence": {
+    "classification": "simulation_estimate",
+    "evidence": {
+      "schedule": "9f640ca3a20c470cada4d2011a421185",
+      "dataset": "d3cce90fa15a0a6ace9eed1125acb5712023621ca9709200066ce6cee2ca9af0",
+      "solver_status": "FEASIBLE",
+      "model": "25b9b94df0854a08a87641bc86ea23f9",
+      "violations": []
+    },
+    "result": {
+      "simulation": "a83974fcd76e4120a540995ec6b0795a",
+      "config": {
+        "runs": 300,
+        "seed": 577,
+        "uncertain": true,
+        "breakdown_probability": 0.24,
+        "receipt_delay_probability": 0.3,
+        "trace": false
+      },
+      "orders": [
+        {
+          "order": "ORD-129",
+          "p_late": 0.49,
+          "ci95": [
+            0.43391603364256914,
+            0.5463368349573855
+          ],
+          "p50_completion": 602,
+          "p95_completion": 636,
+          "completed_runs": 300
+        },
+        {
+          "order": "ORD-130",
+          "p_late": 0.16,
+          "ci95": [
+            0.12285294152977377,
+            0.20574459086868646
+          ],
+          "p50_completion": 630,
+          "p95_completion": 758,
+          "completed_runs": 300
+        },
+        {
+          "order": "ORD-115",
+          "p_late": 0.05,
+          "ci95": [
+            0.030531367290852585,
+            0.08084771970710952
+          ],
+          "p50_completion": 1552,
+          "p95_completion": 1609,
+          "completed_runs": 300
+        },
+        {
+          "order": "ORD-104",
+          "p_late": 0.03,
+          "ci95": [
+            0.015861673205964575,
+            0.05602315099190695
+          ],
+          "p50_completion": 860,
+          "p95_completion": 955,
+          "completed_runs": 300
+        },
+        {
+          "order": "ORD-114",
+          "p_late": 0.02666666666666667,
+          "ci95": [
+            0.013572906766976815,
+            0.051729540297546284
+          ],
+          "p50_completion": 882,
+          "p95_completion": 963,
+          "completed_runs": 300
+        },
+        {
+          "order": "ORD-123",
+          "p_late": 0.016666666666666666,
+          "ci95": [
+            0.0071393720427721935,
+            0.038415943621705605
+          ],
+          "p50_completion": 920,
+          "p95_completion": 1523,
+          "completed_runs": 300
+        },
+        {
+          "order": "ORD-139",
+          "p_late": 0.016666666666666666,
+          "ci95": [
+            0.0071393720427721935,
+            0.038415943621705605
+          ],
+          "p50_completion": 847,
+          "p95_completion": 941,
+          "completed_runs": 300
+        },
+        {
+          "order": "ORD-111",
+          "p_late": 0.006666666666666667,
+          "ci95": [
+            0.0018301100329710784,
+            0.023978074231461442
+          ],
+          "p50_completion": 260,
+          "p95_completion": 287,
+          "completed_runs": 300
+        },
+        {
+          "order": "ORD-118",
+          "p_late": 0.0033333333333333335,
+          "ci95": [
+            0.0005886425761407379,
+            0.018637164554943353
+          ],
+          "p50_completion": 782,
+          "p95_completion": 828,
+          "completed_runs": 300
+        },
+        {
+          "order": "ORD-101",
+          "p_late": 0.0,
+          "ci95": [
+            0,
+            0.012643429997735661
+          ],
+          "p50_completion": 287,
+          "p95_completion": 316,
+          "completed_runs": 300
+        },
+        {
+          "order": "ORD-102",
+          "p_late": 0.0,
+          "ci95": [
+            0,
+            0.012643429997735661
+          ],
+          "p50_completion": 1717,
+          "p95_completion": 2090,
+          "completed_runs": 300
+        },
+        {
+          "order": "ORD-103",
+          "p_late": 0.0,
+          "ci95": [
+            0,
+            0.012643429997735661
+          ],
+          "p50_completion": 729,
+          "p95_completion": 782,
+          "completed_runs": 300
+        },
+        {
+          "order": "ORD-105",
+          "p_late": 0.0,
+          "ci95": [
+            0,
+            0.012643429997735661
+          ],
+          "p50_completion": 815,
+          "p95_completion": 936,
+          "completed_runs": 300
+        },
+        {
+          "order": "ORD-106",
+          "p_late": 0.0,
+          "ci95": [
+            0,
+            0.012643429997735661
+          ],
+          "p50_completion": 1668,
+          "p95_completion": 1841,
+          "completed_runs": 300
+        },
+        {
+          "order": "ORD-107",
+          "p_late": 0.0,
+          "ci95": [
+            0,
+            0.012643429997735661
+          ],
+          "p50_completion": 690,
+          "p95_completion": 730,
+          "completed_runs": 300
+        },
+        {
+          "order": "ORD-108",
+          "p_late": 0.0,
+          "ci95": [
+            0,
+            0.012643429997735661
+          ],
+          "p50_completion": 1750,
+          "p95_completion": 2047,
+          "completed_runs": 300
+        },
+        {
+          "order": "ORD-109",
+          "p_late": 0.0,
+          "ci95": [
+            0,
+            0.012643429997735661
+          ],
+          "p50_completion": 908,
+          "p95_completion": 1551,
+          "completed_runs": 300
+        },
+        {
+          "order": "ORD-110",
+          "p_late": 0.0,
+          "ci95": [
+            0,
+            0.012643429997735661
+          ],
+          "p50_completion": 1912,
+          "p95_completion": 2137,
+          "completed_runs": 300
+        },
+        {
+          "order": "ORD-112",
+          "p_late": 0.0,
+          "ci95": [
+            0,
+            0.012643429997735661
+          ],
+          "p50_completion": 379,
+          "p95_completion": 670,
+          "completed_runs": 300
+        },
+        {
+          "order": "ORD-113",
+          "p_late": 0.0,
+          "ci95": [
+            0,
+            0.012643429997735661
+          ],
+          "p50_completion": 1720,
+          "p95_completion": 1863,
+          "completed_runs": 300
+        },
+        {
+          "order": "ORD-116",
+          "p_late": 0.0,
+          "ci95": [
+            0,
+            0.012643429997735661
+          ],
+          "p50_completion": 1804,
+          "p95_completion": 1907,
+          "completed_runs": 300
+        },
+        {
+          "order": "ORD-117",
+          "p_late": 0.0,
+          "ci95": [
+            0,
+            0.012643429997735661
+          ],
+          "p50_completion": 1511,
+          "p95_completion": 1649,
+          "completed_runs": 300
+        },
+        {
+          "order": "ORD-119",
+          "p_late": 0.0,
+          "ci95": [
+            0,
+            0.012643429997735661
+          ],
+          "p50_completion": 2104,
+          "p95_completion": 2296,
+          "completed_runs": 300
+        },
+        {
+          "order": "ORD-120",
+          "p_late": 0.0,
+          "ci95": [
+            0,
+            0.012643429997735661
+          ],
+          "p50_completion": 882,
+          "p95_completion": 1599,
+          "completed_runs": 300
+        },
+        {
+          "order": "ORD-121",
+          "p_late": 0.0,
+          "ci95": [
+            0,
+            0.012643429997735661
+          ],
+          "p50_completion": 1551,
+          "p95_completion": 1732,
+          "completed_runs": 300
+        },
+        {
+          "order": "ORD-122",
+          "p_late": 0.0,
+          "ci95": [
+            0,
+            0.012643429997735661
+          ],
+          "p50_completion": 1550,
+          "p95_completion": 1710,
+          "completed_runs": 300
+        },
+        {
+          "order": "ORD-124",
+          "p_late": 0.0,
+          "ci95": [
+            0,
+            0.012643429997735661
+          ],
+          "p50_completion": 1831,
+          "p95_completion": 2113,
+          "completed_runs": 300
+        },
+        {
+          "order": "ORD-125",
+          "p_late": 0.0,
+          "ci95": [
+            0,
+            0.012643429997735661
+          ],
+          "p50_completion": 598,
+          "p95_completion": 621,
+          "completed_runs": 300
+        },
+        {
+          "order": "ORD-126",
+          "p_late": 0.0,
+          "ci95": [
+            0,
+            0.012643429997735661
+          ],
+          "p50_completion": 1775,
+          "p95_completion": 2054,
+          "completed_runs": 300
+        },
+        {
+          "order": "ORD-127",
+          "p_late": 0.0,
+          "ci95": [
+            0,
+            0.012643429997735661
+          ],
+          "p50_completion": 960,
+          "p95_completion": 1573,
+          "completed_runs": 300
+        },
+        {
+          "order": "ORD-128",
+          "p_late": 0.0,
+          "ci95": [
+            0,
+            0.012643429997735661
+          ],
+          "p50_completion": 1597,
+          "p95_completion": 1742,
+          "completed_runs": 300
+        },
+        {
+          "order": "ORD-131",
+          "p_late": 0.0,
+          "ci95": [
+            0,
+            0.012643429997735661
+          ],
+          "p50_completion": 2115,
+          "p95_completion": 2365,
+          "completed_runs": 300
+        },
+        {
+          "order": "ORD-132",
+          "p_late": 0.0,
+          "ci95": [
+            0,
+            0.012643429997735661
+          ],
+          "p50_completion": 1654,
+          "p95_completion": 1847,
+          "completed_runs": 300
+        },
+        {
+          "order": "ORD-133",
+          "p_late": 0.0,
+          "ci95": [
+            0,
+            0.012643429997735661
+          ],
+          "p50_completion": 1510,
+          "p95_completion": 1616,
+          "completed_runs": 300
+        },
+        {
+          "order": "ORD-134",
+          "p_late": 0.0,
+          "ci95": [
+            0,
+            0.012643429997735661
+          ],
+          "p50_completion": 1622,
+          "p95_completion": 1763,
+          "completed_runs": 300
+        },
+        {
+          "order": "ORD-135",
+          "p_late": 0.0,
+          "ci95": [
+            0,
+            0.012643429997735661
+          ],
+          "p50_completion": 1864,
+          "p95_completion": 2098,
+          "completed_runs": 300
+        },
+        {
+          "order": "ORD-136",
+          "p_late": 0.0,
+          "ci95": [
+            0,
+            0.012643429997735661
+          ],
+          "p50_completion": 1912,
+          "p95_completion": 2288,
+          "completed_runs": 300
+        },
+        {
+          "order": "ORD-137",
+          "p_late": 0.0,
+          "ci95": [
+            0,
+            0.012643429997735661
+          ],
+          "p50_completion": 1613,
+          "p95_completion": 1671,
+          "completed_runs": 300
+        },
+        {
+          "order": "ORD-138",
+          "p_late": 0.0,
+          "ci95": [
+            0,
+            0.012643429997735661
+          ],
+          "p50_completion": 287,
+          "p95_completion": 311,
+          "completed_runs": 300
+        },
+        {
+          "order": "ORD-140",
+          "p_late": 0.0,
+          "ci95": [
+            0,
+            0.012643429997735661
+          ],
+          "p50_completion": 1797,
+          "p95_completion": 2029,
+          "completed_runs": 300
+        }
+      ]
+    }
+  },
+  "simulations": {
+    "original": {
+      "id": "a83974fcd76e4120a540995ec6b0795a",
+      "summary": {
+        "on_time": {
+          "mean": 0.98,
+          "ci95": [
+            0.9776178572174734,
+            0.9823821427825266
+          ]
+        },
+        "critical_late": {
+          "mean": 0.02666666666666667,
+          "ci95": [
+            0.008405200554770637,
+            0.044928132778562696
+          ]
+        },
+        "weighted_tardiness": {
+          "mean": 57.9,
+          "ci95": [
+            43.18583888342429,
+            72.6141611165757
+          ]
+        },
+        "makespan": {
+          "mean": 2175.693333333333,
+          "ci95": [
+            2162.265742421181,
+            2189.120924245485
+          ]
+        },
+        "queue_delay": {
+          "mean": 122.45364864864865,
+          "ci95": [
+            112.93020425034472,
+            131.9770930469526
+          ]
+        },
+        "disrupted_fraction": {
+          "mean": 0.6677027027027027,
+          "ci95": [
+            0.6596053579993407,
+            0.6758000474060647
+          ]
+        },
+        "outage_minutes": {
+          "mean": 520.4233333333333,
+          "ci95": [
+            491.5402606540328,
+            549.3064060126338
+          ]
+        },
+        "cost": {
+          "mean": 14993.439444444444,
+          "ci95": [
+            14972.363264015787,
+            15014.515624873102
+          ]
+        },
+        "incomplete": {
+          "mean": 0.0,
+          "ci95": [
+            0.0,
+            0.0
+          ]
+        }
+      }
+    },
+    "shift": {
+      "id": "fcf39bf816f44660a0e10a3b872658ad",
+      "summary": {
+        "on_time": {
+          "mean": 0.98,
+          "ci95": [
+            0.9776178572174734,
+            0.9823821427825266
+          ]
+        },
+        "critical_late": {
+          "mean": 0.02666666666666667,
+          "ci95": [
+            0.008405200554770637,
+            0.044928132778562696
+          ]
+        },
+        "weighted_tardiness": {
+          "mean": 57.9,
+          "ci95": [
+            43.18583888342429,
+            72.6141611165757
+          ]
+        },
+        "makespan": {
+          "mean": 2175.693333333333,
+          "ci95": [
+            2162.265742421181,
+            2189.120924245485
+          ]
+        },
+        "queue_delay": {
+          "mean": 122.45364864864865,
+          "ci95": [
+            112.93020425034472,
+            131.9770930469526
+          ]
+        },
+        "disrupted_fraction": {
+          "mean": 0.6677027027027027,
+          "ci95": [
+            0.6596053579993407,
+            0.6758000474060647
+          ]
+        },
+        "outage_minutes": {
+          "mean": 520.4233333333333,
+          "ci95": [
+            491.5402606540328,
+            549.3064060126338
+          ]
+        },
+        "cost": {
+          "mean": 14993.439444444444,
+          "ci95": [
+            14972.363264015787,
+            15014.515624873102
+          ]
+        },
+        "incomplete": {
+          "mean": 0.0,
+          "ci95": [
+            0.0,
+            0.0
+          ]
+        }
+      }
+    },
+    "replan": {
+      "id": "94aca21db56a48bf9dd9f79955586de5",
+      "summary": {
+        "on_time": {
+          "mean": 0.964,
+          "ci95": [
+            0.9615192201032092,
+            0.9664807798967907
+          ]
+        },
+        "critical_late": {
+          "mean": 0.006666666666666667,
+          "ci95": [
+            0.0,
+            0.01589073161712808
+          ]
+        },
+        "weighted_tardiness": {
+          "mean": 74.16666666666667,
+          "ci95": [
+            58.7718712933224,
+            89.56146204001095
+          ]
+        },
+        "makespan": {
+          "mean": 2143.866666666667,
+          "ci95": [
+            2134.2301027725,
+            2153.503230560834
+          ]
+        },
+        "queue_delay": {
+          "mean": 153.129481981982,
+          "ci95": [
+            144.95590804941588,
+            161.3030559145481
+          ]
+        },
+        "disrupted_fraction": {
+          "mean": 0.7320495495495496,
+          "ci95": [
+            0.7247094261815505,
+            0.7393896729175486
+          ]
+        },
+        "outage_minutes": {
+          "mean": 520.4233333333333,
+          "ci95": [
+            491.5402606540328,
+            549.3064060126338
+          ]
+        },
+        "cost": {
+          "mean": 14900.508055555556,
+          "ci95": [
+            14879.828918755175,
+            14921.187192355937
+          ]
+        },
+        "incomplete": {
+          "mean": 0.0,
+          "ci95": [
+            0.0,
+            0.0
+          ]
+        }
+      }
+    }
+  },
+  "comparisons": {
+    "shift": {
+      "weighted_tardiness": {
+        "mean": 0,
+        "ci95": [
+          0.0,
+          0.0
+        ]
+      },
+      "on_time": {
+        "mean": 0.0,
+        "ci95": [
+          0.0,
+          0.0
+        ]
+      },
+      "cost": {
+        "mean": 0.0,
+        "ci95": [
+          0.0,
+          0.0
+        ]
+      }
+    },
+    "reschedule": {
+      "weighted_tardiness": {
+        "mean": 16.266666666666666,
+        "ci95": [
+          -2.4925643219699403,
+          35.02589765530327
+        ]
+      },
+      "on_time": {
+        "mean": -0.01600000000000001,
+        "ci95": [
+          -0.018602933599265473,
+          -0.013397066400734547
+        ]
+      },
+      "cost": {
+        "mean": -92.93138888888879,
+        "ci95": [
+          -97.07710609507612,
+          -88.78567168270146
+        ]
+      }
+    }
+  },
+  "feedback": {
+    "dataset": "61e0baf8eababf0d6fa2e5a4ed0e65cb5188e6534bc84ad8e57f51a55e840b4e",
+    "observations": 148,
+    "drift": {
+      "coverage": 0.972972972972973,
+      "n": 148,
+      "coverage_threshold": 0.82
+    },
+    "retraining_review": true
+  }
+}
