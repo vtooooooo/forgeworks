@@ -1,0 +1,36 @@
+services:
+  api:
+    build: .
+    ports:
+      - "127.0.0.1:8000:8000"
+    environment:
+      FORGEWORKS_PLANNER_TOKEN: ${FORGEWORKS_PLANNER_TOKEN:-}
+    volumes:
+      - app_data:/data
+  postgres:
+    image: postgres:16-alpine
+    profiles: [postgres]
+    environment:
+      POSTGRES_DB: forgeworks
+      POSTGRES_USER: forgeworks
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-local-demo}
+    healthcheck:
+      test: [CMD-SHELL, "pg_isready -U forgeworks -d forgeworks"]
+      interval: 3s
+      timeout: 3s
+      retries: 20
+    volumes:
+      - pg_data:/var/lib/postgresql/data
+  api-postgres:
+    extends: api
+    profiles: [postgres]
+    ports: !override
+      - "127.0.0.1:8001:8000"
+    environment:
+      FORGEWORKS_DATABASE_URL: postgresql+psycopg://forgeworks:${POSTGRES_PASSWORD:-local-demo}@postgres:5432/forgeworks
+    depends_on:
+      postgres:
+        condition: service_healthy
+volumes:
+  app_data:
+  pg_data:
