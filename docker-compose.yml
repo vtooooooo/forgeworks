@@ -31,6 +31,25 @@ services:
     depends_on:
       postgres:
         condition: service_healthy
+  console-api:
+    build: .
+    profiles: [console]
+    environment:
+      FORGEWORKS_DEMO_SEED: "1"
+      FORGEWORKS_CONSOLE_MODE: ${FORGEWORKS_CONSOLE_MODE:-local}
+      FORGEWORKS_PLANNER_TOKEN: ${FORGEWORKS_CONSOLE_PLANNER_TOKEN:-}
+    command: ["sh", "-c", "alembic upgrade head && python examples/console_seed.py && exec uvicorn forgeworks.api:app --host 0.0.0.0 --port 8000"]
+    volumes:
+      - console_data:/data
+  command-center:
+    build: ./frontend
+    profiles: [console]
+    ports:
+      - "127.0.0.1:4173:80"
+    depends_on:
+      console-api:
+        condition: service_healthy
 volumes:
+  console_data:
   app_data:
   pg_data:

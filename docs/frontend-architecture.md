@@ -1,0 +1,9 @@
+# Frontend architecture
+
+React, strict TypeScript, Vite, React Router, TanStack Query, Tailwind, local shadcn-style controls over Radix, Lucide and Recharts implement the command center. Each workspace loads as a route chunk. The default overview does not download Recharts. The custom Gantt groups rows by persisted machine department and uses visible horizontal ranges plus overscan to bound operation buttons on wider timelines. Keyboard users can focus each rendered operation, open its details dialog, and inspect predecessor information.
+
+The shell selects one immutable schedule ID. A centralized client supplies timeouts, abort signals, safe query retries and mutation idempotency keys. Accepted jobs and submission keys persist in session storage. Polling reports backend status. A resumed scenario uses the source ID from the persisted job result. Server state is refreshed when mutations finish. The timeline and metrics share the API epoch and IANA factory timezone.
+
+The API read projections expose a versioned factory, schedule, load denominator, artifact lineage, risk series and reference data. Available utilization time is the working capacity between the factory epoch and the selected makespan, excluding maintenance and nonworking periods. Planned utilization includes processing and setup. Comparisons distinguish nominal schedule deltas, descriptive simulation comparisons and explicitly paired evidence. The optimization and approval code remain in Python.
+
+The fixture is loaded through existing SQLAlchemy tables with its registered model artifact checksum. It contains three validated schedule versions from the 40-order benchmark workflow. It seeds a dedicated database only when explicitly requested. Actual live completion and ERP execution signals are outside the scope of the synthetic demonstration.

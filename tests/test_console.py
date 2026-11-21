@@ -3,6 +3,7 @@
 import importlib.util
 from pathlib import Path
 
+import pytest
 from fastapi.testclient import TestClient
 
 from forgeworks import database as db
@@ -148,3 +149,11 @@ def test_verified_fixture_restores_only_empty_isolated_database(tmp_path, monkey
         assert len(plan["plan"]["operations"]) == 148
         risk = client.get(f"/api/v1/console/schedules/{preferred}/risk").json()
         assert len(risk["series"]) == 300
+
+    occupied = f"sqlite:///{tmp_path / 'occupied.db'}"
+    Service(occupied, tmp_path / "occupied-models").generate(count=2)
+    monkeypatch.setenv("FORGEWORKS_DATABASE_URL", occupied)
+    monkeypatch.setenv("FORGEWORKS_MODEL_DIR", str(tmp_path / "occupied-models"))
+    with pytest.raises(RuntimeError, match="Refusing to seed a nonempty database"):
+        module.seed()
+    assert len(Service().factory().orders) == 2
