@@ -184,3 +184,87 @@ def test_benchmark_smoke():
     assert result["held_out"]["seed"] != result["tuning"]["seed"]
     assert result["scheduling"]["CP-SAT"]["valid"]
     assert result["integrated"]["A"]["paired_delta_vs_A"]["on_time"]["mean"] == 0
+
+
+def test_release_revalidates_saved_payload(service):
+    service.generate(count=3)
+    plan = service.optimize(method="EDD")
+    schedule = plan["id"]
+    service.transition(schedule, "approve", "planner", "test-token")
+    corrupt = plan["payload"]
+    corrupt["plan"]["operations"][0]["setup_start"] = -1
+    with service.store.transaction(True) as conn:
+        conn.execute(
+            db.schedules.update().where(db.schedules.c.id == schedule).values(payload=corrupt)
+        )
+    with pytest.raises(ValueError, match="currently valid"):
+        service.transition(schedule, "release", "planner", "test-token")
+    assert service.schedule(schedule)["state"] == "APPROVED"
+
+
+def test_persisted_overrun_changes_paired_twin_and_keeps_release(service):
+    from forgeworks.domain import Operation, Plan
+    from forgeworks.scenarios import Overrun
+    from forgeworks.simulation import replay
+
+    service.generate(count=3)
+    source = service.optimize(method="EDD")
+    service.transition(source["id"], "approve", "planner", "test-token")
+    service.transition(source["id"], "release", "planner", "test-token")
+    released = service.schedule(source["id"])
+    op = Operation.model_validate(released["payload"]["plan"]["operations"][0])
+    event = Overrun(kind="overrun", order=op.order, stage=op.stage, minutes=8)
+    child = service.alternative(source["id"], event, seconds=2)
+    target = service.schedule(child["schedule"])
+    assert child["valid"]
+    assert target["payload"]["overrun"] == event.model_dump()
+    assert service.schedule(source["id"]) == released
+    config = SimulationConfig(
+        runs=1, seed=7, breakdown_probability=0, receipt_delay_probability=0, trace=True
+    )
+    original = replay(
+        service.factory(target["dataset"]),
+        Plan.model_validate(target["payload"]["plan"]),
+        config,
+        0,
+    )
+    outcome = service.simulate(target["id"], config)
+    before = {(r["order"], r["stage"]): r["active_minutes"] for r in original["processing"]}
+    after = {
+        (r["order"], r["stage"]): r["active_minutes"]
+        for r in outcome["replications"][0]["processing"]
+    }
+    assert after[op.key] == before[op.key] + 8
+    evidence = answer(service, Query(schedule=target["id"], tool="get_simulation_risk"))
+    assert evidence["result"]["simulation"] == outcome["id"]
+    assert service.schedule(source["id"]) == released
+
+
+def test_empty_plan_cannot_replace_active_release(service):
+    service.generate(count=2)
+    original = service.optimize(method="EDD")
+    service.transition(original["id"], "approve", "planner", "test-token")
+    service.transition(original["id"], "release", "planner", "test-token")
+    empty = service.generate(count=0)
+    candidate = service.optimize(empty["dataset"])
+    service.transition(candidate["id"], "approve", "planner", "test-token")
+    with pytest.raises(ValueError, match="empty"):
+        service.transition(candidate["id"], "release", "planner", "test-token")
+    assert service.schedule(original["id"])["state"] == "RELEASED"
+
+
+def test_uncertain_or_foreign_simulation_cannot_release_high_risk(service):
+    service.generate("shortage", count=3)
+    first = service.optimize(method="EDD")
+    second = service.optimize(method="EDD")
+    too_few = service.simulate(first["id"], SimulationConfig(runs=9))
+    deterministic = service.simulate(first["id"], SimulationConfig(runs=10, uncertain=False))
+    foreign = service.simulate(second["id"], SimulationConfig(runs=10))
+    for run, reason in (
+        (too_few, "at least 10"),
+        (deterministic, "at least 10"),
+        (foreign, "another schedule"),
+    ):
+        with pytest.raises(ValueError, match=reason):
+            service.transition(first["id"], "approve", "planner", "test-token", run["id"])
+    assert service.schedule(first["id"])["state"] == "SIMULATED"

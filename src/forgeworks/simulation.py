@@ -1,5 +1,6 @@
 """Discrete-event replay with fixed machine queues and time-phased stock reservations."""
 
+from bisect import insort
 from collections import defaultdict
 from hashlib import sha256
 from math import ceil, sqrt
@@ -42,7 +43,13 @@ def processing_segments(at: int, duration: int, available: list[tuple[int, int]]
     return []
 
 
-def replay(factory: Factory, plan: Plan, config: SimulationConfig, replication: int):
+def replay(
+    factory: Factory,
+    plan: Plan,
+    config: SimulationConfig,
+    replication: int,
+    extra_minutes: dict[tuple[str, int], int] | None = None,
+):
     env = simpy.Environment()
     orders = {o.id: o for o in factory.orders}
     products = {p.id: p for p in factory.products}
@@ -50,6 +57,7 @@ def replay(factory: Factory, plan: Plan, config: SimulationConfig, replication: 
     for op in sorted(plan.operations, key=lambda op: (op.setup_start, op.start)):
         queues[op.machine].append(op)
     receipts: dict[str, list[tuple[int, int]]] = defaultdict(list)
+    outage_events = {}
     for r in factory.receipts:
         rng = stream(config.seed, replication, "receipt", r.id)
         delay = (
@@ -69,6 +77,8 @@ def replay(factory: Factory, plan: Plan, config: SimulationConfig, replication: 
             at = rng.randrange(max(1, min(horizon, 4000)))
             outages = (*outages, Window(start=at, end=at + rng.randint(30, 240)))
         outage_minutes += sum(x.end - x.start for x in outages)
+        if config.trace:
+            outage_events[machine.id] = [x.model_dump() for x in outages]
         # Repeat weekday-pattern capacity beyond the nominal horizon for recovery.
         last_week = 10080
         weeks = max(1, ceil(horizon / last_week))
@@ -87,7 +97,20 @@ def replay(factory: Factory, plan: Plan, config: SimulationConfig, replication: 
         )
     done: dict[tuple[str, int], int] = {}
     machine_free: dict[str, int] = defaultdict(int)
-    stock_events: dict[str, list[tuple[int, int]]] = defaultdict(list)
+    stock_events = {
+        material: sorted((at, 0, quantity) for at, quantity in receipts[material])
+        for material in factory.inventory
+    }
+    duration_cache: dict[tuple[tuple[str, int], int], int] = {}
+
+    def can_reserve(material: str, start: int, consumption: int) -> bool:
+        balance = factory.inventory[material]
+        for at, kind, quantity in stock_events[material]:
+            if (at, kind) >= (start, 1) and balance < consumption:
+                return False
+            balance += quantity
+        return balance >= consumption
+
     executed = []
     activity = []
     cost = 0.0
@@ -127,22 +150,29 @@ def replay(factory: Factory, plan: Plan, config: SimulationConfig, replication: 
                         if at >= b:
                             break
                         shift = int((at + prep) % 1440 >= 510)
-                        rng = stream(config.seed, replication, "duration", *op.key)
-                        duration = ceil(
-                            actual(
-                                product,
-                                op.stage,
-                                order.quantity,
-                                for_machine[mid],
-                                shift,
-                                factory.variability,
-                                rng,
-                            )
-                        )
                         if not config.uncertain:
                             duration = op.end - op.start
-                        elif rng.random() < 0.04:
-                            duration += ceil(duration * 0.25)
+                        else:
+                            cache_key = (op.key, shift)
+                            if cache_key not in duration_cache:
+                                rng = stream(config.seed, replication, "duration", *op.key)
+                                sampled = ceil(
+                                    actual(
+                                        product,
+                                        op.stage,
+                                        order.quantity,
+                                        for_machine[mid],
+                                        shift,
+                                        factory.variability,
+                                        rng,
+                                    )
+                                )
+                                if rng.random() < 0.04:
+                                    sampled += ceil(sampled * 0.25)
+                                duration_cache[cache_key] = sampled + (
+                                    extra_minutes.get(op.key, 0) if extra_minutes else 0
+                                )
+                            duration = duration_cache[cache_key]
                         start = at + prep
                         if start + duration > b:
                             continue
@@ -152,22 +182,9 @@ def replay(factory: Factory, plan: Plan, config: SimulationConfig, replication: 
                         if not segments:
                             continue
                         end = segments[-1][1]
-                        if not op.stage:
-                            consumption = order.quantity * product.units
-                            balance = factory.inventory[product.material]
-                            ledger = [
-                                *((t, 0, q) for t, q in arrivals),
-                                *((t, 1, -q) for t, q in stock_events[product.material]),
-                                (start, 1, -consumption),
-                            ]
-                            for _, _, delta in sorted(ledger):
-                                balance += delta
-                                if balance < 0:
-                                    break
-                            else:
-                                options.append((at, start, end, mid, op, segments))
-                                break
-                        else:
+                        if op.stage or can_reserve(
+                            product.material, start, order.quantity * product.units
+                        ):
                             options.append((at, start, end, mid, op, segments))
                             break
                     else:
@@ -185,7 +202,7 @@ def replay(factory: Factory, plan: Plan, config: SimulationConfig, replication: 
             if not op.stage:
                 order = orders[op.order]
                 product = products[order.product]
-                stock_events[product.material].append((start, order.quantity * product.units))
+                insort(stock_events[product.material], (start, 1, -order.quantity * product.units))
             executed.append(op.model_copy(update={"setup_start": at, "start": start, "end": end}))
             active_minutes = sum(b - a for a, b in segments)
             if config.trace:
@@ -229,7 +246,12 @@ def replay(factory: Factory, plan: Plan, config: SimulationConfig, replication: 
         "outage_minutes": outage_minutes,
         "cost": cost,
         **(
-            {"operations": [op.model_dump() for op in executed], "processing": activity}
+            {
+                "operations": [op.model_dump() for op in executed],
+                "processing": activity,
+                "receipt_arrivals": dict(receipts),
+                "outages": outage_events,
+            }
             if config.trace
             else {}
         ),
@@ -253,8 +275,13 @@ def quantile(values, fraction):
     return sorted(values)[max(0, ceil(len(values) * fraction) - 1)]
 
 
-def simulate(factory: Factory, plan: Plan, config: SimulationConfig):
-    rows = [replay(factory, plan, config, i) for i in range(config.runs)]
+def simulate(
+    factory: Factory,
+    plan: Plan,
+    config: SimulationConfig,
+    extra_minutes: dict[tuple[str, int], int] | None = None,
+):
+    rows = [replay(factory, plan, config, i, extra_minutes) for i in range(config.runs)]
     metrics = {
         key: interval(
             [float(row[key]) for row in rows],

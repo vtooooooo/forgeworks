@@ -46,6 +46,7 @@ def parser():
     opt.add_argument("--method", default="CP-SAT")
     opt.add_argument("--seconds", type=float, default=5.0)
     opt.add_argument("--buffer", type=float, default=0.0)
+    opt.add_argument("--assignment-scope", choices=("full", "dispatch"), default="full")
     for name in (
         "get",
         "validate",
@@ -118,6 +119,8 @@ def run(service, args):
             "state": result["state"],
             "status": result["payload"]["plan"]["status"],
             "objective": result["payload"]["plan"]["objective"],
+            "assignment_scope": result["payload"]["plan"]["assignment_scope"],
+            "profile": result["payload"]["plan"]["profile"],
             "violations": result["payload"]["validation"],
         }
     if action == "get":

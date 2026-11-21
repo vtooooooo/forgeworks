@@ -5,7 +5,7 @@ from typing import Any
 
 from .generation import generate, history
 from .ml import predictions, train
-from .optimization import Method, optimize, standard
+from .optimization import AssignmentScope, Method, optimize, standard
 from .simulation import SimulationConfig, interval, simulate
 from .validation import DurationMap, validate
 
@@ -96,13 +96,21 @@ def benchmark(count=6, runs=30, seconds=4.0, seed=42, scenario="tight", scale=Fa
         for size in (6, 40, 200):
             instance = generate("normal", seed, size)
             durations = standard(instance)
-            methods: tuple[Method, ...] = ("EDD", "CP-SAT")
-            for method in methods:
-                plan = optimize(instance, durations, method, seconds=seconds)
+            methods: tuple[tuple[Method, AssignmentScope], ...] = (
+                ("EDD", "full"),
+                ("CP-SAT", "full"),
+                ("CP-SAT", "dispatch"),
+            )
+            for method, scope in methods:
+                plan = optimize(
+                    instance, durations, method, seconds=seconds, assignment_scope=scope
+                )
                 scales.append(
                     {
                         "orders": size,
                         "method": method,
+                        "assignment_scope": scope,
+                        "profile": plan.profile.model_dump() if plan.profile else None,
                         "status": plan.status,
                         "detail": plan.detail,
                         "seconds": plan.seconds,

@@ -130,6 +130,19 @@ class Weights(Record):
 DEFAULT_WEIGHTS = Weights()
 
 
+class SolverProfile(Record):
+    candidate_pairs: int
+    model_pairs: int
+    sequence_arcs: int = 0
+    variables: int = 0
+    constraints: int = 0
+    dispatch_seconds: float = 0.0
+    construction_seconds: float = 0.0
+    search_seconds: float = 0.0
+    peak_construction_rss_mib: float | None = None
+    peak_search_rss_mib: float | None = None
+
+
 class Plan(Record):
     method: str
     status: str
@@ -144,6 +157,8 @@ class Plan(Record):
     detail: str = ""
     limit_seconds: float | None = None
     solver_seed: int | None = None
+    assignment_scope: Literal["full", "dispatch"] = "full"
+    profile: SolverProfile | None = None
 
 
 def windows(machine: Machine, horizon: int, extra: tuple[Window, ...] = ()):

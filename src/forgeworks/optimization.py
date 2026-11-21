@@ -3,6 +3,7 @@
 from collections import defaultdict
 from itertools import pairwise
 from math import ceil
+from sys import platform
 from time import perf_counter
 from typing import Literal
 
@@ -13,6 +14,7 @@ from .domain import (
     Factory,
     Operation,
     Plan,
+    SolverProfile,
     Weights,
     eligible,
     erp,
@@ -22,6 +24,17 @@ from .domain import (
 from .validation import DurationMap, material_events, totals, validate
 
 Method = Literal["FCFS", "EDD", "SPT", "CP-SAT"]
+AssignmentScope = Literal["full", "dispatch"]
+PAIR_LIMIT = 180_000
+
+
+def peak_rss_mib() -> float | None:
+    # ru_maxrss is a process high-water mark. On Linux it is reported in KiB.
+    if platform != "linux":
+        return None
+    from resource import RUSAGE_SELF, getrusage
+
+    return getrusage(RUSAGE_SELF).ru_maxrss / 1024
 
 
 def standard(factory: Factory) -> DurationMap:
@@ -44,8 +57,10 @@ def optimize(
     frozen: tuple[Operation, ...] = (),
     previous: tuple[Operation, ...] = (),
     earliest: int = 0,
+    assignment_scope: AssignmentScope = "full",
 ) -> Plan:
     started = perf_counter()
+    profile: SolverProfile | None = None
     products = {p.id: p for p in factory.products}
     orders = {o.id: o for o in factory.orders}
     machines = {m.id: m for m in factory.machines}
@@ -61,6 +76,8 @@ def optimize(
             seconds=perf_counter() - started,
             limit_seconds=seconds,
             solver_seed=0,
+            assignment_scope=assignment_scope,
+            profile=profile,
         )
 
     def result(operations, status, bound=None):
@@ -78,8 +95,12 @@ def optimize(
             weights=weights,
             limit_seconds=seconds,
             solver_seed=0,
+            assignment_scope=assignment_scope,
+            profile=profile,
         )
 
+    if assignment_scope == "dispatch" and method != "CP-SAT":
+        return failure("MODEL_INVALID", "Dispatch assignment scope requires CP-SAT")
     if not keys:
         return result(
             (), "OPTIMAL" if method == "CP-SAT" else "FEASIBLE", 0.0 if method == "CP-SAT" else None
@@ -174,16 +195,23 @@ def optimize(
                 ready = choice.end
         return result(tuple(booked), "FEASIBLE")
 
-    per_machine: dict[str, int] = defaultdict(int)
-    for choices in candidates.values():
-        for mid, _ in choices:
-            per_machine[mid] += 1
-    if sum(count * count for count in per_machine.values()) > 180_000:
+    def pair_estimate() -> int:
+        per_machine: dict[str, int] = defaultdict(int)
+        for choices in candidates.values():
+            for mid, _ in choices:
+                per_machine[mid] += 1
+        return sum(count * count for count in per_machine.values())
+
+    candidate_pairs = pair_estimate()
+    profile = SolverProfile(candidate_pairs=candidate_pairs, model_pairs=candidate_pairs)
+    if assignment_scope == "full" and candidate_pairs > PAIR_LIMIT:
         return failure("UNKNOWN", "Circuit construction budget exceeded before search")
 
     hint = previous
     complete_hint = False
-    if len(keys) <= 200:
+    dispatch_seconds = 0.0
+    if assignment_scope == "dispatch" or len(keys) <= 200:
+        dispatch_started = perf_counter()
         baseline = optimize(
             factory,
             durations,
@@ -196,6 +224,27 @@ def optimize(
         if not validate(factory, baseline, durations, frozen, previous, earliest):
             hint = baseline.operations
             complete_hint = True
+        dispatch_seconds = perf_counter() - dispatch_started
+    if assignment_scope == "dispatch":
+        if not complete_hint:
+            profile = profile.model_copy(update={"dispatch_seconds": dispatch_seconds})
+            return failure("UNKNOWN", "No independently validated dispatch assignment")
+        dispatch_machine = {op.key: op.machine for op in hint}
+        for key in keys:
+            candidates[key] = [
+                (mid, d) for mid, d in candidates[key] if mid == dispatch_machine[key]
+            ]
+    model_pairs = pair_estimate()
+    profile = profile.model_copy(
+        update={"model_pairs": model_pairs, "dispatch_seconds": dispatch_seconds}
+    )
+    if model_pairs > PAIR_LIMIT:
+        return failure("UNKNOWN", "Circuit construction budget exceeded before search")
+    construction_started = perf_counter()
+    sequence_arcs = 0
+    # The compact encoding cuts model size on larger graphs. On the small
+    # unrestricted benchmark the original arc implications searched better.
+    compact_setups = assignment_scope == "dispatch" or len(keys) > 100
     hinted = {op.key: op for op in hint}
     machine_hint: dict[str, list[Operation]] = defaultdict(list)
     for op in hint:
@@ -278,6 +327,7 @@ def optimize(
         if complete_hint:
             model.add_hint(unused, int(not ordered))
         model.add(sum(lit for _, lit in nodes) == 0).only_enforce_if(unused)
+        setup_terms: dict[int, list[cp_model.LinearExpr]] = defaultdict(list)
         for i, (key, lit) in enumerate(nodes, 1):
             initial = model.new_bool_var(f"first/{mid}/{i}")
             final = model.new_bool_var(f"last/{mid}/{i}")
@@ -285,21 +335,33 @@ def optimize(
             if complete_hint:
                 model.add_hint(initial, int((0, i) in selected_arcs))
                 model.add_hint(final, int((i, 0) in selected_arcs))
-            model.add(
-                starts[key] - preparations[key] == setup(None, families[key[0]])
-            ).only_enforce_if(initial)
+            initial_setup = setup(None, families[key[0]])
+            if compact_setups:
+                setup_terms[i].append(initial_setup * initial)
+            else:
+                model.add(starts[key] - preparations[key] == initial_setup).only_enforce_if(initial)
             for j, (following, _) in enumerate(nodes, 1):
                 if i == j or (key[0] == following[0] and key[1] > following[1]):
                     continue
-                arc = model.new_bool_var(f"next/{mid}/{i}/{j}")
+                arc = model.new_bool_var("" if compact_setups else f"next/{mid}/{i}/{j}")
                 arcs.append((i, j, arc))
                 if complete_hint:
                     model.add_hint(arc, int((i, j) in selected_arcs))
                 model.add(preparations[following] >= ends[key]).only_enforce_if(arc)
-                model.add(
-                    starts[following] - preparations[following]
-                    == setup(families[key[0]], families[following[0]])
-                ).only_enforce_if(arc)
+                changeover = setup(families[key[0]], families[following[0]])
+                if compact_setups:
+                    if changeover:
+                        setup_terms[j].append(changeover * arc)
+                else:
+                    model.add(
+                        starts[following] - preparations[following] == changeover
+                    ).only_enforce_if(arc)
+        if compact_setups:
+            for j, (key, lit) in enumerate(nodes, 1):
+                model.add(starts[key] - preparations[key] == sum(setup_terms[j])).only_enforce_if(
+                    lit
+                )
+        sequence_arcs += len(arcs)
         model.add_circuit(arcs)
     for material, inventory in factory.inventory.items():
         times = [0]
@@ -351,7 +413,23 @@ def optimize(
         # Large circuits spend most of a short budget in presolve before checking a hint.
         solver.parameters.cp_model_presolve = False
         solver.parameters.linearization_level = 0
+    profile = profile.model_copy(
+        update={
+            "construction_seconds": perf_counter() - construction_started,
+            "variables": len(model.proto.variables),
+            "constraints": len(model.proto.constraints),
+            "sequence_arcs": sequence_arcs,
+            "peak_construction_rss_mib": peak_rss_mib(),
+        }
+    )
+    search_started = perf_counter()
     status = solver.solve(model)
+    profile = profile.model_copy(
+        update={
+            "search_seconds": perf_counter() - search_started,
+            "peak_search_rss_mib": peak_rss_mib(),
+        }
+    )
     if status not in (cp_model.OPTIMAL, cp_model.FEASIBLE):
         return failure(solver.status_name(status), solver.solution_info())
     operations = tuple(
@@ -366,4 +444,4 @@ def optimize(
         for (key, mid), lit in assigned.items()
         if solver.boolean_value(lit)
     )
-    return result(operations, solver.status_name(status), solver.best_objective_bound)
+    return result(operations, solver.status_name(status), max(0.0, solver.best_objective_bound))

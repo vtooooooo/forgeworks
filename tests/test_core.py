@@ -205,3 +205,129 @@ def test_breakdown_interrupts_active_processing(tiny):
     assert trace["segments"][0] == (5, 7)
     assert trace["segments"][1][0] == 30
     assert sum(b - a for a, b in trace["segments"]) == trace["active_minutes"]
+
+
+def test_directional_changeover_and_tampered_setup(tiny):
+    other_product = tiny.products[0].model_copy(update={"id": "P2", "family": "b"})
+    second_order = tiny.orders[0].model_copy(update={"id": "B", "product": "P2", "release": 20})
+    factory = tiny.model_copy(
+        update={
+            "products": (*tiny.products, other_product),
+            "orders": (*tiny.orders, second_order),
+            "inventory": {"stock": 2},
+        }
+    )
+    durations = {("A", 0, "M-01"): 10, ("B", 0, "M-01"): 10}
+    for scope in ("full", "dispatch"):
+        plan = optimize(factory, durations, assignment_scope=scope)
+        assert plan.status == "OPTIMAL"
+        assert not validate(factory, plan, durations)
+        first, second = sorted(plan.operations, key=lambda op: op.start)
+        assert first.order == "A" and first.start - first.setup_start == 5
+        assert second.start - second.setup_start == 10
+        tampered = second.model_copy(update={"setup_start": first.end - 1})
+        violations = validate(
+            factory, plan.model_copy(update={"operations": (first, tampered)}), durations
+        )
+        assert {row["code"] for row in violations} >= {"OVERLAP", "SETUP"}
+
+
+def test_dispatch_scope_scales_and_timeout_keeps_profile():
+    f = generate(count=200)
+    d = standard(f)
+    unrestricted = optimize(f, d, seconds=1)
+    assert unrestricted.status == "UNKNOWN" and unrestricted.profile is not None
+    assert unrestricted.profile.candidate_pairs > 180_000
+    assert unrestricted.profile.variables == unrestricted.profile.constraints == 0
+    limited = optimize(f, d, seconds=1e-9, assignment_scope="dispatch")
+    assert limited.status == "UNKNOWN" and not limited.operations
+    assert limited.profile is not None
+    assert limited.profile.variables > 0
+    assert limited.profile.model_pairs < unrestricted.profile.candidate_pairs / 10
+
+
+def test_paired_twin_trace_material_priority_and_resources(tiny):
+    first_machine = tiny.machines[0]
+    second_machine = first_machine.model_copy(update={"id": "M-02"})
+    second = tiny.orders[0].model_copy(update={"id": "B"})
+    f = tiny.model_copy(
+        update={
+            "machines": (first_machine, second_machine),
+            "orders": (*tiny.orders, second),
+            "receipts": (Receipt(id="R", material="stock", at=30, quantity=1),),
+        }
+    )
+    duration = {(o.id, 0, m.id): 10 for o in f.orders for m in f.machines}
+    full = optimize(f, duration)
+    swap = {
+        key: value
+        for key, value in duration.items()
+        if key[2] == ("M-02" if key[0] == "A" else "M-01")
+    }
+    alternative = optimize(f, swap)
+    assert not validate(f, full, duration) and not validate(f, alternative, swap)
+    cfg = SimulationConfig(
+        runs=4, seed=4, breakdown_probability=1, receipt_delay_probability=1, trace=True
+    )
+    for index in range(cfg.runs):
+        left = replay(f, full, cfg, index)
+        right = replay(f, alternative, cfg, index)
+        assert left["receipt_arrivals"] == right["receipt_arrivals"]
+        assert left["outages"] == right["outages"]
+        for row in (left, right):
+            assert len(row["operations"]) == 2
+            assert (
+                sorted(op["start"] for op in row["operations"])[1]
+                >= row["receipt_arrivals"]["stock"][0][0]
+            )
+            for item in row["processing"]:
+                assert all(
+                    a >= outage["end"] or b <= outage["start"]
+                    for a, b in item["segments"]
+                    for outage in row["outages"][item["machine"]]
+                )
+        assert {r["order"]: r["active_minutes"] for r in left["processing"]} == {
+            r["order"]: r["active_minutes"] for r in right["processing"]
+        }
+
+
+def test_chronological_boundary_preserves_simultaneous_events():
+    rows = history(generate(count=3), 100)
+    for index in (55, 56):
+        rows[index]["at"] = rows[54]["at"]
+    _, metrics = train(list(reversed(rows)))
+    assert metrics["split_sizes"] == [57, 13, 15, 15]
+    assert all(a[1] < b[0] for a, b in pairwise(metrics["split_time_ranges"]))
+    with pytest.raises(ValueError, match="Insufficient distinct"):
+        train([{**row, "at": 0} for row in rows])
+
+
+def test_dispatch_scope_preserves_frozen_assignment(tiny):
+    other = tiny.machines[0].model_copy(update={"id": "M-02"})
+    factory = tiny.model_copy(update={"machines": (*tiny.machines, other)})
+    durations = {("A", 0, "M-01"): 10, ("A", 0, "M-02"): 11}
+    fixed = Operation(order="A", stage=0, machine="M-02", setup_start=5, start=10, end=21)
+    plan = optimize(factory, durations, frozen=(fixed,), earliest=8, assignment_scope="dispatch")
+    assert plan.operations == (fixed,)
+    assert not validate(factory, plan, durations, (fixed,), earliest=8)
+    broken = factory.model_copy(
+        update={
+            "machines": (
+                factory.machines[0],
+                other.model_copy(update={"maintenance": (Window(start=6, end=30),)}),
+            )
+        }
+    )
+    failed = optimize(broken, durations, frozen=(fixed,), earliest=8, assignment_scope="dispatch")
+    assert failed.status == "UNKNOWN" and not failed.operations
+
+
+def test_processing_recovery_across_multiple_calendar_gaps():
+    from forgeworks.simulation import processing_segments
+
+    assert processing_segments(7, 13, [(0, 10), (15, 20), (40, 60)]) == [
+        (7, 10),
+        (15, 20),
+        (40, 45),
+    ]
+    assert processing_segments(10, 2, [(0, 10), (15, 20)]) == []

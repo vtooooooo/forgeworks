@@ -6,7 +6,7 @@ from pydantic import Field
 
 from .domain import Record, Weights
 from .generation import Scenario
-from .optimization import Method
+from .optimization import AssignmentScope, Method
 from .scenarios import Change
 from .simulation import SimulationConfig
 
@@ -36,6 +36,7 @@ class OptimizeRequest(Record):
     seconds: float = Field(default=5.0, gt=0, le=45.0)
     buffer: float = Field(default=0.0, ge=0, le=2.0)
     weights: Weights = Weights()
+    assignment_scope: AssignmentScope = "full"
 
 
 class AlternativeRequest(Record):

@@ -252,15 +252,11 @@ class Service:
                 for r in conn.execute(
                     db.history.select()
                     .where(db.history.c.dataset == factory.version, db.history.c.at >= 0)
-                    .order_by(db.history.c.at.desc())
+                    .order_by(db.history.c.at.desc(), db.history.c.id)
                     .limit(5000)
                 ).mappings()
             ]
-        # Deterministic tie breaking preserves the observation order across repeated runs.
-        for i, observation in enumerate(
-            sorted(recent, key=lambda row: (row["at"], json.dumps(row, sort_keys=True)))
-        ):
-            historical.append({**observation, "at": i})
+        historical.extend(reversed(recent))
         bundle, metrics = train(historical, seed)
         artifact = pickle.dumps(bundle, protocol=5)
         checksum = sha256(artifact).hexdigest()
@@ -355,6 +351,7 @@ class Service:
         earliest=0,
         change=None,
         replan=False,
+        assignment_scope="full",
     ):
         factory = self.factory(dataset)
         bundle, model_key = self.model(model)
@@ -372,7 +369,17 @@ class Service:
             for estimate in affected:
                 estimate["minutes"] += change.minutes
         durations = {key: r["minutes"] for key, r in by_key.items()}
-        plan = optimize(factory, durations, method, seconds, weights, frozen, previous, earliest)
+        plan = optimize(
+            factory,
+            durations,
+            method,
+            seconds,
+            weights,
+            frozen,
+            previous,
+            earliest,
+            assignment_scope=assignment_scope,
+        )
         violations = validate(factory, plan, durations, frozen, previous, earliest)
         key = uid()
         payload = {
@@ -385,6 +392,7 @@ class Service:
             "replan": replan,
             "created_at": now(),
             "buffer": buffer,
+            "overrun": change.model_dump() if isinstance(change, Overrun) else None,
             "high_risk": factory.name in ("shortage", "breakdown", "multiple", "variable")
             or replan
             or change is not None,
@@ -409,10 +417,15 @@ class Service:
             return dict(required(conn, db.schedules, key))
 
     def validate(self, key):
-        record = self.schedule(key)
+        with self.store.transaction() as conn:
+            return self.validate_record(conn, required(conn, db.schedules, key))
+
+    @staticmethod
+    def validate_record(conn, record):
         p = record["payload"]
+        dataset = required(conn, db.datasets, record["dataset"])["payload"]
         return validate(
-            self.factory(record["dataset"]),
+            Factory.model_validate(dataset),
             Plan.model_validate(p["plan"]),
             {(r["order"], r["stage"], r["machine"]): r["minutes"] for r in p["predictions"]},
             tuple(Operation.model_validate(o) for o in p["frozen"]),
@@ -427,7 +440,9 @@ class Service:
         plan = Plan.model_validate(record["payload"]["plan"])
         if config.trace and config.runs * len(plan.operations) > 20_000:
             raise ValueError("Trace workload exceeds 20,000 operation replications")
-        result = simulate(self.factory(record["dataset"]), plan, config)
+        event = record["payload"].get("overrun")
+        extra = {(event["order"], event["stage"]): event["minutes"]} if event else None
+        result = simulate(self.factory(record["dataset"]), plan, config, extra)
         simulation_id = uid()
         with self.store.transaction(True) as conn:
             summary = {k: v for k, v in result.items() if k != "replications"}
@@ -507,6 +522,7 @@ class Service:
             earliest=at or 0,
             change=change,
             replan=at is not None,
+            assignment_scope=parent.assignment_scope,
         )
         plan = Plan.model_validate(revised["payload"]["plan"])
         valid = not revised["payload"]["validation"]
@@ -548,7 +564,7 @@ class Service:
 
     def transition(self, key, action, identity, token, simulation_id=None):
         secret = os.getenv("FORGEWORKS_PLANNER_TOKEN")
-        if not secret or not token or not hmac.compare_digest(secret, token):
+        if not secret or not token or not hmac.compare_digest(secret.encode(), token.encode()):
             raise PermissionError("Planner authorization required")
         if not identity.strip():
             raise ValueError("Approver identity is required")
@@ -558,7 +574,7 @@ class Service:
             if action == "approve":
                 if state in ("APPROVED", "RELEASED"):
                     return {"schedule": key, "state": state}
-                if state not in ("VALIDATED", "SIMULATED") or record["payload"]["validation"]:
+                if state not in ("VALIDATED", "SIMULATED") or self.validate_record(conn, record):
                     raise ValueError("Approval requires independent validation")
                 if simulation_id:
                     sim = required(conn, db.simulations, simulation_id)
@@ -579,8 +595,12 @@ class Service:
                     return {"schedule": key, "state": state}
                 if state != "APPROVED":
                     raise ValueError("Release requires planner approval")
+                if self.validate_record(conn, record):
+                    raise ValueError("Release requires a currently valid schedule")
+                if not record["payload"]["plan"]["operations"]:
+                    raise ValueError("An empty schedule cannot be released")
                 parent = record["parent"]
-                if record["payload"]["replan"] and (
+                if record["payload"].get("replan", False) and (
                     not parent or required(conn, db.schedules, parent)["state"] != "RELEASED"
                 ):
                     raise ValueError("Rescheduling parent has been superseded")

@@ -1,5 +1,6 @@
 """Chronological duration evaluation and split-conformal calibration."""
 
+from bisect import bisect_right
 from collections import defaultdict
 from math import ceil, sqrt
 from statistics import mean, median
@@ -38,13 +39,16 @@ def train(rows: list[dict], seed: int = 42) -> tuple[dict, dict]:
         raise ValueError("Training requires at least 100 observations")
     ordered = sorted(rows, key=lambda row: row["at"])
     size = len(ordered)
-    boundaries = (size * 55 // 100, size * 70 // 100, size * 85 // 100)
+    times = [row["at"] for row in ordered]
+    boundaries = tuple(
+        bisect_right(times, times[size * percent // 100 - 1]) for percent in (55, 70, 85)
+    )
+    if not 0 < boundaries[0] < boundaries[1] < boundaries[2] < size:
+        raise ValueError("Insufficient distinct observation times for four chronological splits")
     training = ordered[: boundaries[0]]
     validation = ordered[boundaries[0] : boundaries[1]]
     calibration = ordered[boundaries[1] : boundaries[2]]
     test = ordered[boundaries[2] :]
-    if any(ordered[i - 1]["at"] >= ordered[i]["at"] for i in boundaries):
-        raise ValueError("Chronological split crosses duplicate observation times")
     grouped = defaultdict(list)
     for row in training:
         grouped[row["family"], row["operation"]].append(row["duration"])
@@ -117,6 +121,9 @@ def train(rows: list[dict], seed: int = 42) -> tuple[dict, dict]:
         "selected": bundle["selected"],
         "models": metrics,
         "split_sizes": [len(x) for x in (training, validation, calibration, test)],
+        "split_time_ranges": [
+            [part[0]["at"], part[-1]["at"]] for part in (training, validation, calibration, test)
+        ],
         "features": SCHEMA,
         "seed": seed,
         "target_coverage": 0.9,
