@@ -480,7 +480,9 @@ class Service:
                 )
             return result
 
-    def alternative(self, key, change, seconds=5.0, config=None, at=None, freeze_until=None):
+    def alternative(
+        self, key, change, seconds=5.0, config=None, at=None, freeze_until=None, name=None
+    ):
         source = self.schedule(key)
         parent = Plan.model_validate(source["payload"]["plan"])
         if self.validate(key):
@@ -529,6 +531,7 @@ class Service:
         diff = difference(parent, plan) if valid else None
         result = {
             "parent": key,
+            "name": name,
             "schedule": revised["id"],
             "valid": valid,
             "status": plan.status,

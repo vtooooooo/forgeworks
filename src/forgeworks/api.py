@@ -9,6 +9,7 @@ from pydantic import BaseModel
 from sqlalchemy import text
 
 from . import database as db
+from .console import configure_console, mode
 from .contracts import (
     ApprovalRequest,
     BenchmarkRequest,
@@ -163,6 +164,8 @@ def create_app(service: Service | None = None):
 
     @app.post(base + "/copilot/query")
     def copilot(body: Query, service: Svc):
+        if mode() == "read-only":
+            return answer(service, body, persist=False)
         return answer(service, body, configured_provider())
 
     @app.post(base + "/schedules/{schedule_id}/approve")
@@ -211,6 +214,7 @@ def create_app(service: Service | None = None):
     def benchmark(body: BenchmarkRequest, jobs: JobQueue, key: Idempotency = None):
         return jobs.submit("benchmark", body, key)
 
+    configure_console(app)
     return app
 
 
