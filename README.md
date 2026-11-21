@@ -4,7 +4,7 @@ ForgeWorks is a local production-planning backend for a synthetic precision-meta
 
 ## Manufacturing Operations Command Center
 
-The React command center makes the existing FastAPI planning workflow available through eight workspaces. Inspect the persisted Gantt, model measurements, simulation replications, scenario comparisons, and decision history. The interview fixture loads the published 40-order plan and its 300-replication evidence without a fresh solve.
+React, TypeScript, Vite, TanStack Query, Tailwind, local shadcn-style controls, and Recharts bring the existing FastAPI planning workflow into eight workspaces. Docker Compose connects them through a same-origin Nginx gateway. Inspect the persisted Gantt, model measurements, simulation replications, scenario comparisons, and decision history. The interview fixture loads the published 40-order plan and its 300-replication evidence without a fresh solve.
 
 ```bash
 docker compose -p forgeworks-console-demo --profile console up --build command-center
