@@ -14,6 +14,7 @@ RUN --mount=type=secret,id=build_ca \
     && pip install --no-cache-dir -r requirements.lock \
     && pip install --no-cache-dir --no-deps . \
     && adduser --disabled-password --gecos "" forgeworks \
+    && chmod -R a+rX /app \
     && mkdir /data && chown forgeworks /data
 USER forgeworks
 EXPOSE 8000
