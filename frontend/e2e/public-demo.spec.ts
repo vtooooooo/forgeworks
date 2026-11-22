@@ -2,7 +2,7 @@ import { expect, test } from "@playwright/test";
 
 test.skip(process.env.FORGEWORKS_PUBLIC_SMOKE !== "1", "Runs against the read-only public build");
 
-test("public recruiter demo provides verified evidence without write access", async ({ page, request }) => {
+test("public recruiter demo provides verified evidence without write access", async ({ page }) => {
   const errors: string[] = [];
   const writes: string[] = [];
   page.on("pageerror", error => errors.push(error.message));
@@ -43,7 +43,10 @@ test("public recruiter demo provides verified evidence without write access", as
   await go("Schedule Approvals");
   await expect(page.getByRole("button", { name: "Release", exact: true })).toBeDisabled();
   expect(writes).toEqual([]);
-  const denied = await request.post("/api/v1/schedules/demo/release", { data: {} });
-  expect([404, 405, 501]).toContain(denied.status());
+  const denied = await page.evaluate(async () => {
+    const url = new URL("./api/v1/schedules/demo/release", location.href);
+    return (await fetch(url, { method: "POST", body: "{}" })).status;
+  });
+  expect([404, 405, 501]).toContain(denied);
   expect(errors).toEqual([]);
 });
