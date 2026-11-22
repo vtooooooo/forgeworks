@@ -1,3 +1,4 @@
+import { publicDemo } from "./public-demo";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import {
   Activity,
@@ -20,6 +21,7 @@ import { Component, lazy, Suspense, useState, type ReactNode } from "react";
 import { createRoot } from "react-dom/client";
 import {
   BrowserRouter,
+  HashRouter,
   Link,
   NavLink,
   Route,
@@ -55,6 +57,8 @@ const System = lazy(() =>
 );
 import { Badge, Button, Message, Select, short } from "./ui";
 import "./styles.css";
+
+const Router = publicDemo ? HashRouter : BrowserRouter;
 
 const navigation = [
   { path: "/", label: "Overview", icon: LayoutDashboard },
@@ -128,7 +132,7 @@ function App() {
         focusOrder,
       }}
     >
-      <a href="#main-content" className="skip">
+      <a href="#main-content" className="skip" onClick={event=>{event.preventDefault();document.getElementById("main-content")?.focus();}}>
         Skip to workspace
       </a>
       <div className="shell">
@@ -215,7 +219,7 @@ function App() {
                 {catalog.isError
                   ? "API unavailable"
                   : catalog.isSuccess
-                    ? "API connected"
+                    ? publicDemo ? "Evidence loaded" : "API connected"
                     : "Connecting"}
               </span>
               {catalog.data?.demo && <Badge tone="blue">Demo mode</Badge>}
@@ -238,7 +242,8 @@ function App() {
               ) : null}
             </div>
           </header>
-          <main id="main-content">
+          <main id="main-content" tabIndex={-1}>
+            {publicDemo && <Message>Public read-only demo. Browse verified synthetic evidence. New schedules, simulations, scenario changes, and planner actions are disabled.</Message>}
             {tour !== null && (
               <section className="tour-banner" aria-label="Guided walkthrough">
                 <Activity size={21} />
@@ -367,9 +372,9 @@ if (root)
   createRoot(root).render(
     <Boundary>
       <QueryClientProvider client={queryClient}>
-        <BrowserRouter>
+        <Router>
           <App />
-        </BrowserRouter>
+        </Router>
       </QueryClientProvider>
     </Boundary>,
   );

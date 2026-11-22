@@ -1,3 +1,4 @@
+import { publicDemo, snapshotExport } from "./public-demo";
 import { useQueryClient } from "@tanstack/react-query";
 import {
   CalendarDays,
@@ -346,7 +347,8 @@ export function Scheduler() {
       >
         <a
           className="button secondary"
-          href={`${base}/schedules/${segment(s.id)}/export?format=zip`}
+          download={publicDemo ? `forgeworks-${short(s.id)}.zip` : undefined}
+          href={publicDemo ? snapshotExport(s.id) : `${base}/schedules/${segment(s.id)}/export?format=zip`}
         >
           <Download size={16} /> Export
         </a>
@@ -523,7 +525,7 @@ export function Scheduler() {
         {validation && (
           <Message kind={validation.valid ? "success" : "error"}>
             {validation.valid
-              ? "Independent validation passed"
+              ? publicDemo ? "Saved independent validation passed" : "Independent validation passed"
               : `${validation.violations.length} validation issue(s)`}
             {!validation.valid && (
               <pre>{JSON.stringify(validation.violations, null, 2)}</pre>

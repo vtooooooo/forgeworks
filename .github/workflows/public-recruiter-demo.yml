@@ -1,0 +1,46 @@
+name: Public recruiter demo
+
+on:
+  pull_request:
+    paths: ["frontend/**", "examples/**", "src/**", ".github/workflows/public-recruiter-demo.yml"]
+  workflow_dispatch:
+    inputs:
+      public_url:
+        description: Optional published HTTPS origin to smoke test after the build
+        type: string
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+      - run: pip install -r requirements.lock && pip install --no-deps -e .
+      - run: npm ci && VITE_PUBLIC_DEMO=1 npm run build -- --base ./
+        working-directory: frontend
+      - run: python examples/export_recruiter_demo.py frontend/dist/demo
+      - run: npx playwright install --with-deps chromium
+        working-directory: frontend
+      - name: Smoke test the generated static site
+        run: |
+          python -m http.server 4174 --bind 127.0.0.1 --directory frontend/dist &
+          curl --fail --retry 5 --retry-connrefused http://127.0.0.1:4174/
+          FORGEWORKS_PUBLIC_SMOKE=1 FORGEWORKS_E2E_URL=http://127.0.0.1:4174 npm --prefix frontend run e2e -- public-demo.spec.ts
+      - name: Smoke test the published site
+        if: inputs.public_url != ''
+        env:
+          FORGEWORKS_E2E_URL: ${{ inputs.public_url }}
+          FORGEWORKS_PUBLIC_SMOKE: '1'
+        run: |
+          case "$FORGEWORKS_E2E_URL" in https://*) ;; *) exit 1 ;; esac
+          npm --prefix frontend run e2e -- public-demo.spec.ts
+      - uses: actions/upload-artifact@v4
+        with:
+          name: forgeworks-public-demo
+          path: frontend/dist

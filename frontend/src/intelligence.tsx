@@ -1,3 +1,4 @@
+import { publicDemo } from "./public-demo";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   Activity,
@@ -817,8 +818,7 @@ export function Copilot() {
           <div className="conversation">
             {!messages.length && (
               <Message>
-                Choose an evidence question or enter a supported planning
-                request.
+                {publicDemo ? "Choose a structured question to read a saved explanation." : "Choose an evidence question or enter a supported planning request."}
               </Message>
             )}
             {messages.map((m) => (
@@ -832,7 +832,7 @@ export function Copilot() {
             )}
             {error && <Message kind="error">{error}</Message>}
           </div>
-          <form
+          {!publicDemo && <form
             className="compose"
             onSubmit={(e) => {
               e.preventDefault();
@@ -856,7 +856,7 @@ export function Copilot() {
             >
               <Send size={17} />
             </Button>
-          </form>
+          </form>}
         </Panel>
         <Panel
           title="Evidence context"
