@@ -4,6 +4,8 @@ ForgeWorks is a local production-planning backend for a synthetic precision-meta
 
 ## Manufacturing Operations Command Center
 
+**[Open the public recruiter demo](https://forgeworks-ai-recruiter-demo.sound-rhino-8637.chatgpt.site/)**. The HTTPS site restores the verified synthetic schedules and evidence from immutable assets. It preserves interactive exploration and disables planning writes. No local toolchain or sign-in is needed. [Hosting and maintenance](docs/deployment-guide.md#public-recruiter-release)
+
 React, TypeScript, Vite, TanStack Query, Tailwind, local shadcn-style controls, and Recharts bring the existing FastAPI planning workflow into eight workspaces. Docker Compose connects them through a same-origin Nginx gateway. Inspect the persisted Gantt, model measurements, simulation replications, scenario comparisons, and decision history. The interview fixture loads the published 40-order plan and its 300-replication evidence without a fresh solve.
 
 ```bash

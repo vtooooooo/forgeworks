@@ -16,9 +16,15 @@ The local backend can also run without Docker using `sh examples/start_console_a
 
 ## Public exposure
 
-Use a dedicated synthetic instance with `FORGEWORKS_CONSOLE_MODE=read-only`. A hosted reverse proxy needs an explicit host and Origin allowlist. Expose only the read-only gateway and enforce request limits. Free static hosts can serve the React bundle, while queued optimization and persistence need a separate long-running process. The verified deliverable is the local Compose experience. No hosted infrastructure was deployed.
+Use a dedicated synthetic instance with `FORGEWORKS_CONSOLE_MODE=read-only`. A hosted reverse proxy needs an explicit host and Origin allowlist. Expose only the read-only gateway and enforce request limits. Free static hosts can serve the React bundle, while queued optimization and persistence need a separate long-running process. This guidance applies to a custom hosted FastAPI deployment. The recruiter release below uses a dedicated static publication.
 
 ## Public recruiter release
+
+**Published HTTPS URL**
+
+[https://forgeworks-ai-recruiter-demo.sound-rhino-8637.chatgpt.site/](https://forgeworks-ai-recruiter-demo.sound-rhino-8637.chatgpt.site/)
+
+The release uses public ChatGPT Sites static hosting. The same static output is portable to Cloudflare Pages. The verified release was built from GitHub source commit `933dc21`; the hosting mirror recorded `1bfbaa703048b5399139dfc17776984b75bc409c`.
 
 The public build uses the React console and immutable JSON and ZIP assets produced at build time by the existing Python/FastAPI fixture. It preserves timeline exploration, schedule versions, both historical shifts, simulation replications and version comparisons. The deterministic copilot answers are emitted by the existing backend and exposed as structured choices. Live free-text requests, optimization, simulation, new scenarios, and planner transitions are disabled. The public artifact has no HTTP mutation routes, planner secrets, executable model files or database.
 
@@ -28,6 +34,6 @@ Cloudflare Pages Free allows 500 builds per month, up to 20 minutes per build, a
 
 ### Maintenance and alternate hosting
 
-The **Public recruiter demo** GitHub workflow tests the snapshot and publishes the `forgeworks-public-demo` build artifact. For an alternate Cloudflare Pages deployment, download that artifact from Actions, then create a Pages **Direct Upload** project in the Cloudflare dashboard and upload the ZIP. The dashboard assigns the exact `pages.dev` URL. A local toolchain is unnecessary for that path. Run the same workflow's optional published-origin smoke test when available and share the URL after it passes.
+The **Public recruiter demo** GitHub workflow tests the snapshot and publishes the `forgeworks-public-demo` build artifact. For an alternate Cloudflare Pages deployment, download that artifact from Actions, then create a Pages **Direct Upload** project in the Cloudflare dashboard and upload the ZIP. The dashboard assigns the exact `pages.dev` URL. A local toolchain is unnecessary for that path. The workflow runs Chromium against the published origin as well as the generated artifact. Supply another HTTPS origin through the workflow input when checking an alternate publication.
 
 To update data, first review a new verified synthetic fixture, then rebuild and redeploy the entire artifact from a single revision. Never upload the working tree, temporary SQLite database, or trusted model pickle. The publisher only needs the static build directory. The local full-stack Compose workflow remains available for authorized planning exercises.
