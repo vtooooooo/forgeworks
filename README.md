@@ -1,8 +1,8 @@
-# ForgeWorks AI
+# ForgeWorks AI - [ForgeWorks](https://forgeworks-4f5.pages.dev/)
 
 ForgeWorks AI is a production-planning command center for a synthetic precision-metal factory. It estimates operation durations, builds independently validated job-shop schedules, models delivery risk, and records planner decisions.
 
-**[Open the public recruiter demo](https://forgeworks-ai-recruiter-demo.sound-rhino-8637.chatgpt.site/)** and choose **Interview walkthrough** for a seven-step tour. The public demo is read-only and requires no account or local setup.
+**[Open the demo](https://forgeworks-4f5.pages.dev/)** and choose **Interview walkthrough** for a seven-step tour. The public demo is read-only and requires no account or local setup.
 
 ## What the demo shows
 
@@ -20,8 +20,6 @@ The local deployment connects the same frontend to a FastAPI service through Ngi
 ```bash
 docker compose -p forgeworks-console-demo --profile console up --build command-center
 ```
-
-Open **http://127.0.0.1:4173** and choose **Interview walkthrough**. The console uses a dedicated SQLite volume. Planner actions require explicitly enabled local server authorization. [Deployment and reset](docs/deployment-guide.md) · [Interview guide](docs/interview-demo-guide.md)
 
 ![Production scheduler showing machine rows, assigned operations, shifts, and maintenance](docs/screenshots/refinement/scheduler.png)
 
