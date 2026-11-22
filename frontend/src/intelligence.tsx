@@ -12,7 +12,8 @@ import {
   Shield,
   Timer,
 } from "lucide-react";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { useSearchParams } from "react-router";
 import {
   Bar,
   BarChart,
@@ -27,6 +28,8 @@ import {
   request,
   segment,
   useRisk,
+  useSchedule,
+  type Risk,
   useTask,
   type CopilotInput,
   type Evaluation,
@@ -62,6 +65,7 @@ export function Predictions() {
   const [machine, setMachine] = useState("");
   const [stage, setStage] = useState("");
   const [shift, setShift] = useState("");
+  const [featureSelection, setFeatureSelection] = useState("");
   const families = [...new Set(s?.factory.products.map((p) => p.family))];
   const accepted =
     s?.factory.orders.filter(
@@ -105,6 +109,8 @@ export function Predictions() {
   const chartRows = (
     machine ? rows : rows.filter((r) => assigned.has(`${r.stage}-${r.machine}`))
   ).slice(0, 12);
+  const featureKey = (row: (typeof chartRows)[number]) => `${row.stage}:${row.machine}`;
+  const featureRow = chartRows.find((row) => featureKey(row) === featureSelection) ?? chartRows[0];
   return (
     <>
       <PageTitle
@@ -129,7 +135,7 @@ export function Predictions() {
         <Metric
           title="Selected model MAE"
           value={number(model?.mae, 2)}
-          detail="Minutes · final chronological partition"
+          detail="Mean absolute error in minutes · held-out data"
           icon={<Gauge size={20} />}
         />
         <Metric
@@ -145,19 +151,20 @@ export function Predictions() {
         <Metric
           title="Interval coverage"
           value={percent(model?.coverage, 1)}
-          detail="Empirical coverage · nominal 90%"
+          detail="Observed outcomes inside the nominal 90% interval"
           tone="teal"
           icon={<Shield size={20} />}
         />
         <Metric
           title="RMSE"
           value={number(model?.rmse, 2)}
-          detail={`${number(model?.n)} final-partition observations`}
+          detail={`Root mean square error · ${number(model?.n)} observations`}
           tone="amber"
           icon={<Timer size={20} />}
         />
       </div>
       <Panel
+        className="tour-target"
         title="Duration comparison"
         subtitle="Assigned operations by default. Select a machine to inspect alternative estimates."
       >
@@ -228,34 +235,38 @@ export function Predictions() {
         {chartRows.length > 0 ? (
           <div
             className="chart-frame"
-            aria-label="Duration comparison chart in minutes"
+            role="group"
+            aria-label="Duration comparison chart in minutes. Exact values appear in the table below."
           >
-            <ResponsiveContainer width="100%" height={260}>
+            <ResponsiveContainer width="100%" height={235}>
               <BarChart
                 data={chartRows}
                 margin={{ top: 10, right: 20, left: 0, bottom: 0 }}
               >
                 <CartesianGrid vertical={false} stroke="#e6edf5" />
                 <XAxis dataKey="operation" />
-                <YAxis width={45} />
+                <YAxis width={65} unit=" min" />
                 <Tooltip />
-                <Legend />
+                <Legend formatter={(label) => <span className="chart-legend-label">{label}</span>} />
                 <Bar
                   dataKey="erp"
+                  isAnimationActive={false}
                   name="ERP standard"
-                  fill="#a5b5ca"
+                  fill="#576e87"
                   radius={[4, 4, 0, 0]}
                 />
                 <Bar
                   dataKey="expected"
+                  isAnimationActive={false}
                   name="Model estimate"
                   fill="#3874d5"
                   radius={[4, 4, 0, 0]}
                 />
                 <Bar
                   dataKey="history_mean"
+                  isAnimationActive={false}
                   name="Historical group mean"
-                  fill="#36a49a"
+                  fill="#28796f"
                   radius={[4, 4, 0, 0]}
                 />
               </BarChart>
@@ -285,7 +296,10 @@ export function Predictions() {
             number(p.expected, 1),
             p.lower === null
               ? "Unavailable"
-              : `${number(p.lower, 1)}–${number(p.upper, 1)} min`,
+              : <div className="prediction-range">
+                  <meter min={p.lower} max={p.upper ?? p.lower} value={p.expected} aria-label={`${p.operation} estimate within the prediction interval`} />
+                  <span>{number(p.lower, 1)}–{number(p.upper, 1)} min</span>
+                </div>,
             number(p.history_mean, 1),
             p.history_count,
           ])}
@@ -296,10 +310,15 @@ export function Predictions() {
           title="Prediction inputs"
           subtitle={`${selected || "No order selected"} · model ${short(pred.data?.model)}`}
         >
+          {featureRow && <div className="panel-copy"><Field label="Operation for feature evidence">
+            <Select value={featureKey(featureRow)} onChange={(event) => setFeatureSelection(event.target.value)}>
+              {chartRows.map((row) => <option key={featureKey(row)} value={featureKey(row)}>Stage {row.stage + 1} · {row.operation} · {row.machine}</option>)}
+            </Select>
+          </Field></div>}
           <Table
             columns={["Feature", "Persisted planning value"]}
-            rows={Object.entries(chartRows[0]?.features ?? {}).map(([k, v]) => [
-              k,
+            rows={Object.entries(featureRow?.features ?? {}).map(([k, v]) => [
+              k.replaceAll("_", " "),
               typeof v === "number" ? number(v, 2) : v,
             ])}
           />
@@ -313,8 +332,9 @@ export function Predictions() {
               group mean is unavailable when no records match.
             </p>
             <p>
-              Synthetic test-set performance requires field calibration before
-              real manufacturing use.
+              Better duration estimates can improve the time reserved for each
+              operation. The evaluation uses synthetic data only. Real factory
+              performance has yet to be validated.
             </p>
           </div>
         </Panel>
@@ -334,6 +354,79 @@ function histogram(values: number[]) {
   );
   for (const value of values) bins[Math.floor((value - min) / step)].count++;
   return bins;
+}
+
+function OrderRiskTable({ schedule, rows }: { schedule: Schedule; rows: Risk["risk"] }) {
+  const [params] = useSearchParams();
+  const watchlist = params.get("risk") === "watch";
+  const watchTarget = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    if (watchlist) watchTarget.current?.scrollIntoView({ block: "start" });
+  }, [watchlist]);
+  const [search, setSearch] = useState("");
+  const [level, setLevel] = useState(watchlist ? "Delivery watch" : "");
+  const [sort, setSort] = useState<{ key: "order" | "p_late" | "p50_completion" | "p95_completion" | "completed_runs"; desc: boolean }>({ key: "p_late", desc: true });
+  const [page, setPage] = useState(0);
+  const pageSize = 10;
+  const matched = rows.filter((row) => {
+    const matchesLevel = level === "Delivery watch"
+      ? row.p_late >= 0.1 && schedule.plan.tardiness[row.order] === 0
+      : !level || riskLevel(row.p_late) === level;
+    return matchesLevel && row.order.toLowerCase().includes(search.trim().toLowerCase());
+  }).sort((a, b) => {
+    const left = a[sort.key], right = b[sort.key];
+    if (left == null || right == null) return left == null ? (right == null ? 0 : 1) : -1;
+    const result = typeof left === "string" ? left.localeCompare(String(right)) : Number(left) - Number(right);
+    return (sort.desc ? -result : result) || a.order.localeCompare(b.order);
+  });
+  const last = Math.max(0, Math.ceil(matched.length / pageSize) - 1);
+  const current = Math.min(page, last);
+  const start = current * pageSize;
+  const columns = [
+    ["Order", "order"], ["Estimated late", "p_late"], ["95% interval", null], ["Signal", null],
+    ["P50 completion", "p50_completion"], ["P95 completion", "p95_completion"], ["Completed runs", "completed_runs"],
+  ] as const;
+
+  return (
+    <Panel className="tour-target" title="Delivery reliability by order" subtitle="Estimated probability of missing the due date. Wilson intervals show uncertainty in each probability.">
+      <div className="panel-copy evidence-toolbar" ref={watchTarget}>
+        <Field label="Search order ID"><input type="search" value={search} onChange={(event) => { setSearch(event.target.value); setPage(0); }} /></Field>
+        <Field label="Risk level">
+          <Select value={level} onChange={(event) => { setLevel(event.target.value); setPage(0); }}>
+            <option value="">All risk levels</option>
+            {["Delivery watch", "High risk", "Watch", "Low risk"].map((label) => <option key={label}>{label}</option>)}
+          </Select>
+        </Field>
+      </div>
+      {matched.length ? <div className="table-scroll">
+        <table>
+          <thead><tr>{columns.map(([label, key]) => (
+            <th key={label} scope="col" aria-sort={key === sort.key ? (sort.desc ? "descending" : "ascending") : undefined}>
+              {key ? <button type="button" className="sort-button" onClick={() => { setSort({ key, desc: key === sort.key ? !sort.desc : key !== "order" }); setPage(0); }}>
+                {label} <span aria-hidden="true">{key === sort.key ? (sort.desc ? "↓" : "↑") : "↕"}</span>
+              </button> : label}
+            </th>
+          ))}</tr></thead>
+          <tbody>{matched.slice(start, start + pageSize).map((row) => (
+            <tr key={row.order}>
+              <th scope="row">{row.order}</th>
+              <td>{percent(row.p_late, 1)}</td>
+              <td>{row.ci95.map((value) => percent(value, 1)).join(" to ")}</td>
+              <td><Badge tone={row.p_late >= 0.5 ? "red" : row.p_late >= 0.1 ? "amber" : "green"}>{riskLevel(row.p_late)}</Badge></td>
+              <td>{time(schedule, row.p50_completion)}</td>
+              <td>{time(schedule, row.p95_completion)}</td>
+              <td>{row.completed_runs}</td>
+            </tr>
+          ))}</tbody>
+        </table>
+      </div> : <Message>No orders match these filters.</Message>}
+      <div className="panel-foot evidence-pagination">
+        <span role="status">{matched.length ? `${start + 1}–${Math.min(start + pageSize, matched.length)} of ${matched.length} orders` : "0 orders"}</span>
+        <Button disabled={current === 0} onClick={() => setPage(current - 1)}>Previous page</Button>
+        <Button disabled={current === last} onClick={() => setPage(current + 1)}>Next page</Button>
+      </div>
+    </Panel>
+  );
 }
 
 export function Twin() {
@@ -396,13 +489,31 @@ export function Twin() {
   const ranked = [...(snapshot?.risk ?? [])].sort(
     (a, b) => b.p_late - a.p_late,
   );
+  const runPicker = (
+    <Field label="Simulation run">
+      <Select
+        value={activeSim ?? ""}
+        onChange={(e) => setChosen(e.target.value)}
+      >
+        <option value="">Latest evidence</option>
+        {s.simulations.map((r) => (
+          <option key={String(r.id)} value={String(r.id)}>
+            {short(String(r.id))} ·{" "}
+            {String((r.config as { runs: number })?.runs)} replications
+          </option>
+        ))}
+      </Select>
+    </Field>
+  );
   return (
     <>
       <PageTitle
         title="Digital Twin"
         subtitle="Synthetic execution uncertainty and order-level delivery evidence."
-      />
-      <Panel
+      >
+        {publicDemo && s.simulations.length > 0 && runPicker}
+      </PageTitle>
+      {!publicDemo && <Panel
         title="Simulation controls"
         subtitle={`Schedule ${short(s.id)} · ${s.simulations.length} persisted runs`}
       >
@@ -417,20 +528,7 @@ export function Twin() {
             });
           }}
         >
-          <Field label="Simulation run">
-            <Select
-              value={activeSim ?? ""}
-              onChange={(e) => setChosen(e.target.value)}
-            >
-              <option value="">Latest evidence</option>
-              {s.simulations.map((r) => (
-                <option key={String(r.id)} value={String(r.id)}>
-                  {short(String(r.id))} ·{" "}
-                  {String((r.config as { runs: number })?.runs)} replications
-                </option>
-              ))}
-            </Select>
-          </Field>
+          {runPicker}
           <Field label="Replications">
             <input
               type="number"
@@ -461,7 +559,7 @@ export function Twin() {
           </Button>
         </form>
         <JobStatus {...job} />
-      </Panel>
+      </Panel>}
       {risk.isFetching && (
         <Message kind="loading">Loading stored simulation results</Message>
       )}
@@ -505,6 +603,11 @@ export function Twin() {
               icon={<Activity size={20} />}
             />
           </div>
+          <details className="evidence-note">
+            <summary>How to read simulation outcomes</summary>
+            <p>The nominal plan uses scheduled durations. The twin estimates the share delivered on time across replications, sums priority-weighted late minutes, and estimates when the last order finishes. The 95% intervals describe uncertainty in the simulated means.</p>
+          </details>
+          <OrderRiskTable schedule={s} rows={ranked} />
           <div className="overview-grid">
             <Panel
               title="Order completion distribution"
@@ -521,13 +624,13 @@ export function Twin() {
                 </Select>
               }
             >
-              <Distribution rows={values.completion} color="#3073dd" />
+              <Distribution rows={values.completion} color="#3073dd" unit="Completion minute" />
             </Panel>
             <Panel
               title="Weighted tardiness distribution"
               subtitle="Replication count by weighted-minute bin"
             >
-              <Distribution rows={values.tardiness} color="#609e9d" />
+              <Distribution rows={values.tardiness} color="#397c78" unit="Weighted late minutes" />
             </Panel>
           </div>
           <Panel
@@ -544,41 +647,7 @@ export function Twin() {
               ))}
             </div>
           </Panel>
-          <Panel
-            title="Delivery reliability by order"
-            subtitle="Wilson intervals and estimated lateness"
-          >
-            <Table
-              columns={[
-                "Order",
-                "Estimated late",
-                "95% interval",
-                "Signal",
-                "P50 completion",
-                "P95 completion",
-                "Completed runs",
-              ]}
-              rows={ranked.map((r) => [
-                r.order,
-                percent(r.p_late, 1),
-                r.ci95.map((p) => percent(p, 1)).join(" to "),
-                <Badge
-                  tone={
-                    r.p_late >= 0.5
-                      ? "red"
-                      : r.p_late >= 0.1
-                        ? "amber"
-                        : "green"
-                  }
-                >
-                  {riskLevel(r.p_late)}
-                </Badge>,
-                time(s, r.p50_completion),
-                time(s, r.p95_completion),
-                r.completed_runs,
-              ])}
-            />
-          </Panel>
+
         </>
       )}
       <Message>
@@ -593,9 +662,11 @@ export function Twin() {
 function Distribution({
   rows,
   color,
+  unit,
 }: {
   rows: { start: number; count: number }[];
   color: string;
+  unit: string;
 }) {
   if (!rows.length)
     return (
@@ -605,15 +676,16 @@ function Distribution({
     );
   return (
     <>
-      <div className="chart-frame">
+      <div className="chart-frame" role="group" aria-label={`Distribution of ${unit.toLowerCase()} across stored replications`}>
         <ResponsiveContainer width="100%" height={215}>
           <BarChart data={rows}>
             <CartesianGrid vertical={false} stroke="#e6edf5" />
             <XAxis dataKey="start" />
             <YAxis allowDecimals={false} />
-            <Tooltip />
+            <Tooltip labelFormatter={(value) => `${unit}, bin starting at ${value}`} />
             <Bar
               dataKey="count"
+              isAnimationActive={false}
               name="Replications"
               fill={color}
               radius={[4, 4, 0, 0]}
@@ -632,6 +704,46 @@ function Distribution({
 type EvidenceRecord = { [key: string]: Json };
 const object = (value: Json): EvidenceRecord =>
   value && typeof value === "object" && !Array.isArray(value) ? value : {};
+function CopilotComparison({ data, source }: { data: EvidenceRecord; source: Schedule }) {
+  const comparison = useSchedule(typeof data.other === "string" ? data.other : "");
+  const target = comparison.data;
+  const relatedReplan = target?.parent === source.id ? target
+    : source.parent === target?.id ? source : undefined;
+  const moved = Array.isArray(data.moved) ? data.moved.map(object) : [];
+  const previous = new Map(source.plan.operations.map((op) => [`${op.order}:${op.stage}`, op]));
+  const count = (fromLate: boolean) => target ? Object.entries(source.plan.tardiness).filter(([id, old]) => {
+    const revised = target.plan.tardiness[id];
+    return revised != null && (old > 0) === fromLate && (revised > 0) !== fromLate;
+  }).length : null;
+  const rows = (changes: EvidenceRecord[]) => changes.map((change) => {
+    const start = previous.get(`${change.order}:${change.stage}`)?.start;
+    const delta = typeof change.minutes === "number" ? change.minutes : null;
+    return [
+      String(change.order), Number(change.stage) + 1, String(change.old_machine), String(change.new_machine),
+      time(source, start), time(source, start != null && delta != null ? start + delta : null),
+      delta == null ? "—" : `${delta > 0 ? "+" : ""}${delta} min`,
+    ];
+  });
+  const columns = ["Order ID", "Operation stage", "Previous machine", "New machine", "Previous start", "Revised start", "Timing difference"];
+  const featured = [...moved].sort((a, b) => Math.abs(Number(b.minutes)) - Math.abs(Number(a.minutes))).slice(0, 6);
+  return (
+    <section className="evidence-result">
+      <h3>Schedule Comparison</h3>
+      <dl className="details comparison-summary">
+        <div><dt>Operations moved</dt><dd>{moved.length}</dd></div>
+        <div><dt>Machine reassignments</dt><dd>{number(typeof data.reassignments === "number" ? data.reassignments : null)}</dd></div>
+        <div><dt>Protected operations</dt><dd>{number(relatedReplan?.frozen)}</dd></div>
+        <div><dt>Newly late orders</dt><dd>{number(count(false))}</dd></div>
+        <div><dt>Recovered orders</dt><dd>{number(count(true))}</dd></div>
+      </dl>
+      <p>Comparing the selected schedule with {short(String(data.other))}. The table shows the largest changes in planned start time.</p>
+      <Table columns={columns} rows={rows(featured)} />
+      {moved.length > featured.length && <details><summary>All {moved.length} changed operations</summary><Table columns={columns} rows={rows(moved)} /></details>}
+      {comparison.error && <Message>Additional schedule details are unavailable.</Message>}
+    </section>
+  );
+}
+
 export function Evidence({
   answer,
   schedule: s,
@@ -660,7 +772,7 @@ export function Evidence({
           {answer.classification.replaceAll("_", " ")}
         </Badge>
         <span>Schedule {short(String(answer.evidence.schedule))}</span>
-        <span>{String(answer.evidence.solver_status ?? "")}</span>
+        {answer.evidence.solver_status && <span>Solver {String(answer.evidence.solver_status)}</span>}
         {data.simulation && (
           <span>Simulation {short(String(data.simulation))}</span>
         )}
@@ -750,15 +862,21 @@ export function Evidence({
           />
         </>
       )}
-      {!timeline.length &&
+      {Array.isArray(data.moved) && <CopilotComparison data={data} source={s} />}
+      {!Array.isArray(data.moved) && !timeline.length &&
         !risk.length &&
         !utilization.length &&
         !eligible.length &&
-        !data.reason && <pre>{JSON.stringify(answer.result, null, 2)}</pre>}
+        !data.reason && <Message>No structured details are available for this answer. Open Technical evidence to inspect the recorded result.</Message>}
       <details>
         <summary>Evidence references</summary>
-        <pre>{JSON.stringify(answer.evidence, null, 2)}</pre>
+        <dl className="details">
+          {Object.entries(answer.evidence).filter(([, value]) => typeof value !== "object" || value == null).map(([key, value]) => (
+            <div key={key}><dt>{key.replaceAll("_", " ")}</dt><dd>{String(value ?? "Unavailable")}</dd></div>
+          ))}
+        </dl>
       </details>
+      <details><summary>Technical evidence</summary><pre>{JSON.stringify(answer, null, 2)}</pre></details>
     </div>
   );
 }
@@ -859,6 +977,7 @@ export function Copilot() {
           </form>}
         </Panel>
         <Panel
+          className="tour-target"
           title="Evidence context"
           subtitle="Structured options work without an LLM"
         >

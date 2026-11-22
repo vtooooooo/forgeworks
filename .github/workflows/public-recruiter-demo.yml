@@ -31,7 +31,7 @@ jobs:
         run: |
           python -m http.server 4174 --bind 127.0.0.1 --directory frontend/dist &
           curl --fail --retry 5 --retry-connrefused http://127.0.0.1:4174/
-          FORGEWORKS_PUBLIC_SMOKE=1 FORGEWORKS_E2E_URL=http://127.0.0.1:4174 npm --prefix frontend run e2e -- public-demo.spec.ts
+          FORGEWORKS_PUBLIC_SMOKE=1 FORGEWORKS_E2E_URL=http://127.0.0.1:4174 npm --prefix frontend run e2e -- public-demo.spec.ts public-refinement.spec.ts
       - name: Smoke test the published site
         env:
           FORGEWORKS_E2E_URL: ${{ inputs.public_url || 'https://forgeworks-ai-recruiter-demo.sound-rhino-8637.chatgpt.site/' }}

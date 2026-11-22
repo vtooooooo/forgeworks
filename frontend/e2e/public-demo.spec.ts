@@ -20,7 +20,10 @@ test("public recruiter demo provides verified evidence without write access", as
   await expect(page.getByText(/Public read-only demo/)).toBeVisible();
   await expect(page.getByText("40 scheduled · 40 open")).toBeVisible();
   await go("Production Scheduler");
-  await expect(page.getByRole("button", { name: "Generate schedule" })).toBeDisabled();
+  const polished = await page.locator("details.snapshot-notice").count() > 0;
+  const generate = page.getByRole("button", { name: "Generate schedule" });
+  if (polished) await expect(generate).toHaveCount(0);
+  else await expect(generate).toBeDisabled();
   await page.getByRole("button", { name: /ORD-\d+ stage/ }).first().click();
   await expect(page.getByRole("dialog")).toContainText("Production time");
   await page.keyboard.press("Escape");
@@ -31,17 +34,29 @@ test("public recruiter demo provides verified evidence without write access", as
   await expect(page.getByRole("columnheader", { name: "Historical mean" })).toBeVisible();
   await go("Digital Twin");
   await expect(page.getByRole("heading", { name: "Delivery reliability by order" })).toBeVisible();
-  await expect(page.getByRole("button", { name: "Run simulation" })).toBeDisabled();
+  const simulate = page.getByRole("button", { name: "Run simulation" });
+  if (polished) await expect(simulate).toHaveCount(0);
+  else await expect(simulate).toBeDisabled();
   await go("Planning Copilot");
   await page.getByRole("button", { name: "Explain order timing" }).click();
   await expect(page.getByText("Evidence references")).toBeVisible();
   await go("Scenario Lab");
   await expect(page.getByRole("columnheader", { name: "Alternative", exact: true })).toBeVisible();
-  await expect(page.getByRole("button", { name: "Run scenario" })).toBeDisabled();
+  // The published release predates the refinement and still shows disabled actions.
+  if (await page.getByRole("heading", { name: "Live what-if planning" }).count()) {
+    await expect(page.getByRole("button", { name: "Run scenario" })).toHaveCount(0);
+  } else {
+    await expect(page.getByRole("button", { name: "Run scenario" })).toBeDisabled();
+  }
   await page.reload();
   await expect(page.getByRole("heading", { name: "Scenario Lab", exact: true })).toBeVisible();
   await go("Schedule Approvals");
-  await expect(page.getByRole("button", { name: "Release", exact: true })).toBeDisabled();
+  const release = page.getByRole("button", { name: "Release", exact: true });
+  if (await page.getByText(/This snapshot records historical decisions/).count()) {
+    await expect(release).toHaveCount(0);
+  } else {
+    await expect(release).toBeDisabled();
+  }
   expect(writes).toEqual([]);
   const denied = await page.evaluate(async () => {
     const url = new URL("./api/v1/schedules/demo/release", location.href);
