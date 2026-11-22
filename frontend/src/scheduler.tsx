@@ -415,6 +415,12 @@ export function Scheduler() {
           icon={<ShieldCheck size={18} />}
         />
       </div>
+      {s.plan.status === "FEASIBLE" && isValid(s) && (
+        <details className="evidence-note solver-note">
+          <summary>The solver found a feasible schedule that passed independent constraint validation. Optimality has not been established.</summary>
+          <p>The optimality gap compares this schedule’s objective with the solver’s best bound. A weak bound can leave a large gap even when the schedule satisfies the constraints.</p>
+        </details>
+      )}
       {job.job?.result?.schedule && job.job.result.schedule !== s.id && (
         <Message>
           Review the persisted optimization result{" "}
@@ -425,8 +431,9 @@ export function Scheduler() {
       )}
       <JobStatus {...job} />
       <Panel
+        className="tour-target"
         title="Machine timeline"
-        subtitle="Operations by department"
+        subtitle="Scroll to explore the horizon. Select an operation for setup, timing, and dependencies."
         action={
           <div className="actions compact">
             <Button onClick={() => void validate(s.id)} disabled={validateBusy}>
@@ -511,7 +518,7 @@ export function Scheduler() {
             >
               <ZoomOut size={16} />
             </Button>
-            <span>{percent(zoom)}</span>
+            <Button aria-label="Reset zoom" title="Reset zoom to 100%" onClick={() => setZoom(1)}>{percent(zoom)}</Button>
             <Button
               aria-label="Zoom in"
               disabled={zoom >= 4}
@@ -549,9 +556,9 @@ export function Scheduler() {
             timeline.
           </Message>
         )}
-        <div className="timeline-legend">
+        <div className="timeline-legend" aria-label="Timeline legend">
           <span>
-            <i className="key-operation" /> Operation
+            <i className="key-operation" /> Operation · colors distinguish orders
           </span>
           <span>
             <i className="key-setup" /> Setup

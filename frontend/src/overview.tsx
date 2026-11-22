@@ -151,7 +151,7 @@ export function Overview() {
         <Metric
           title="Delivery watch"
           value={risk.data ? number(watch) : "—"}
-          detail="Nominally on time · ≥10% modeled risk"
+          detail={<Link to="/twin?risk=watch" className="text-link">View orders with ≥10% modeled risk</Link>}
           tone="amber"
           icon={<Flag size={20} />}
         />
@@ -165,8 +165,9 @@ export function Overview() {
       </div>
       <div className="overview-grid">
         <Panel
+          className="tour-target"
           title="Order delivery overview"
-          subtitle="Nominal schedule and simulation watchlist"
+          subtitle="Nominal due dates and modeled delivery watch"
           action={
             <Link to="/twin" className="text-link">
               Risk analysis

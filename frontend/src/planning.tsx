@@ -1,3 +1,4 @@
+import { publicDemo } from "./public-demo";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   Activity,
@@ -146,6 +147,13 @@ export function scenarioChange(form: EventForm, s: Schedule): Change {
   return { kind, machine, start: begin, end, index };
 }
 
+function scenarioDelta(before: number | undefined, after: number | undefined, fraction: boolean) {
+  if (before == null || after == null) return null;
+  const delta = (after - before) * (fraction ? 100 : 1);
+  if (Math.abs(delta) < 0.005) return "stayed the same";
+  return `${delta > 0 ? "increased" : "decreased"} by ${number(Math.abs(delta), 2)}${fraction ? " percentage points" : ""}`;
+}
+
 export function Comparison({
   baseline,
   alternative,
@@ -263,6 +271,8 @@ export function Comparison({
       true,
     ],
   ];
+  const onTimeDelta = scenarioDelta(ra.data?.summary.on_time?.mean, rb.data?.summary.on_time?.mean, true);
+  const tardinessDelta = scenarioDelta(ra.data?.summary.weighted_tardiness?.mean, rb.data?.summary.weighted_tardiness?.mean, false);
   return (
     <>
       <div className="context-strip">
@@ -279,18 +289,32 @@ export function Comparison({
           </Badge>
         )}
       </div>
+      <section className="decision-summary">
+        <h3>Decision summary</h3>
+        <p>Both schedules passed independent validation. {saved ? `${number(after.frozen)} operations were protected in the recorded change.` : ""}</p>
+        <p>{onTimeDelta && tardinessDelta
+          ? `In the stored runs, estimated on-time delivery ${onTimeDelta} and mean weighted tardiness ${tardinessDelta}.`
+          : "A simulation comparison requires stored runs for both schedules."}</p>
+      </section>
       <Table
         columns={["Metric", "Source", "Alternative", "Difference"]}
-        rows={stats.map(([label, a, b, fraction]) => [
-          label,
-          fraction ? percent(a, 1) : number(a, 2),
-          fraction ? percent(b, 1) : number(b, 2),
-          a == null || b == null
-            ? "—"
-            : fraction
-              ? `${number((b - a) * 100, 2)} pp`
-              : number(b - a, 2),
-        ])}
+        rows={stats.map(([label, original, revised, fraction]) => {
+          const delta = original == null || revised == null ? null : revised - original;
+          const direction = label === "Machine utilization" ? 0
+            : label === "Nominal on-time orders" || label === "Simulated on-time delivery" ? 1 : -1;
+          const displayedDelta = delta == null ? null : Math.round((fraction ? delta * 100 : delta) * 100) / 100;
+          const signal = displayedDelta == null ? "Unavailable" : displayedDelta === 0 ? "Unchanged"
+            : direction === 0 ? "Changed" : direction * displayedDelta > 0 ? "Improved" : "Regressed";
+          return [
+            label,
+            fraction ? percent(original, 1) : number(original, 2),
+            fraction ? percent(revised, 1) : number(revised, 2),
+            <span className="delta-value">
+              {displayedDelta != null && <span>{displayedDelta > 0 ? "+" : ""}{number(displayedDelta, 2)}{fraction ? " pp" : ""}</span>}
+              <Badge tone={signal === "Improved" ? "green" : signal === "Regressed" ? "amber" : "neutral"}>{signal}</Badge>
+            </span>,
+          ];
+        })}
       />
       {ra.data?.summary.on_time && rb.data?.summary.on_time && (
         <div
@@ -433,7 +457,7 @@ export function Scenarios() {
         title="Scenario Lab"
         subtitle="Evaluate isolated alternatives and inspect operational tradeoffs."
       />
-      <Panel
+      {!publicDemo && <Panel
         title="Create a what-if scenario"
         subtitle="The source plan remains unchanged. Time inputs are minutes from the factory epoch."
         action={<FlaskConical size={20} />}
@@ -693,11 +717,19 @@ export function Scenarios() {
           {error && <Message kind="error">{error}</Message>}
           <JobStatus {...job} />
         </form>
-      </Panel>
+      </Panel>}
       <Panel
+        className="tour-target"
         title="Compare schedules"
         subtitle="Choose a persisted alternative, including the verified breakdown replan."
         action={
+          <div className="comparison-selects">
+          {publicDemo && <Field label="Source schedule"><Select
+            value={baseline}
+            onChange={(event) => { setSource(event.target.value); setCompare(""); }}
+          >
+            {catalog?.schedules.map((item) => <option key={item.id} value={item.id}>{item.state} · {short(item.id)}</option>)}
+          </Select></Field>}
           <Select
             aria-label="Alternative schedule"
             value={target}
@@ -712,10 +744,14 @@ export function Scenarios() {
                 </option>
               ))}
           </Select>
+          </div>
         }
       >
         <Comparison baseline={baseline} alternative={target} />
       </Panel>
+      {publicDemo && <Panel title="Live what-if planning">
+        <p className="panel-copy">The public demo compares saved schedule versions. Create and evaluate new disruptions in the controlled local workspace.</p>
+      </Panel>}
     </>
   );
 }
@@ -825,7 +861,7 @@ export function Approvals() {
               </dd>
             </div>
           </dl>
-          <div className="panel-foot">
+          {!publicDemo && <div className="panel-foot">
             <Button disabled={!canApprove} onClick={() => setAction("approve")}>
               <ClipboardCheck size={16} /> Approve
             </Button>
@@ -843,8 +879,8 @@ export function Approvals() {
             >
               Reject
             </Button>
-          </div>
-          {!catalog?.can_approve && (
+          </div>}
+          {publicDemo ? <p className="panel-copy">This snapshot records historical decisions. Approval, rejection, and release require planner authorization in the controlled local workspace.</p> : !catalog?.can_approve && (
             <Message>
               Planner actions require explicitly enabled local server
               authorization.
@@ -859,6 +895,7 @@ export function Approvals() {
           )}
         </Panel>
         <Panel
+          className="tour-target"
           title="Decision history"
           subtitle="Persisted planner identity and evidence reference"
         >
@@ -994,25 +1031,25 @@ export function System() {
     <>
       <PageTitle
         title="System Information"
-        subtitle="Runtime health, model versions, and verified performance evidence."
+        subtitle={publicDemo ? "Evidence source, model versions, and benchmark records for this public snapshot." : "Runtime health, model versions, and verified performance evidence."}
       />
       <div className="overview-grid">
         <Panel title="Runtime" action={<Activity size={18} />}>
           <dl className="details">
             <div>
-              <dt>Backend version</dt>
+              <dt>{publicDemo ? "Evidence producer version" : "Backend version"}</dt>
               <dd>{catalog?.version ?? "Unavailable"}</dd>
             </div>
             <div>
-              <dt>Database</dt>
-              <dd>{catalog?.database ?? "Unavailable"}</dd>
+              <dt>{publicDemo ? "Data source" : "Database"}</dt>
+              <dd>{publicDemo ? "Immutable synthetic evidence" : catalog?.database ?? "Unavailable"}</dd>
             </div>
             <div>
-              <dt>Health check</dt>
+              <dt>{publicDemo ? "Evidence index" : "Health check"}</dt>
               <dd>
                 {health.data?.status === "ok" ? (
                   <Badge tone="green">
-                    <CheckCircle2 size={14} /> Healthy
+                    <CheckCircle2 size={14} /> {publicDemo ? "Available" : "Healthy"}
                   </Badge>
                 ) : (
                   (health.error?.message ?? "Checking")
@@ -1086,24 +1123,27 @@ export function System() {
         />
       </Panel>
       <div className="overview-grid">
-        <Panel title="Scheduling and simulation">
+        <Panel title="Scheduling capabilities">
           <div className="panel-copy">
             <p>
               CP-SAT supports unrestricted assignments and assignments fixed
               from an independently validated EDD dispatch. FCFS, EDD, and
               shortest-processing-time are available baselines.
             </p>
-            <p>
-              {schedule?.simulations.length
-                ? `Latest selected-schedule simulation: ${JSON.stringify(schedule.simulations[0].config)}`
-                : "Simulation configuration unavailable for this selection."}
-            </p>
-            <p>
-              Large unrestricted machine circuits can hit the construction
-              guard. The synthetic twin can anticipate outages and receipt
-              delays, and planning uses projected shop-floor state.
-            </p>
           </div>
+        </Panel>
+        <Panel title="Simulation configuration">
+          {schedule?.simulations[0] ? (
+            <>
+              <dl className="details">{Object.entries(schedule.simulations[0].config as Record<string, unknown>)
+                .filter(([, value]) => typeof value !== "object" || value === null)
+                .map(([key, value]) => <div key={key}><dt>{key.replaceAll("_", " ")}</dt><dd>{typeof value === "boolean" ? (value ? "Yes" : "No") : String(value ?? "Unavailable")}</dd></div>)}</dl>
+              <details className="panel-copy"><summary>Technical configuration</summary><pre>{JSON.stringify(schedule.simulations[0].config, null, 2)}</pre></details>
+            </>
+          ) : <Message>Simulation configuration unavailable for this selection.</Message>}
+        </Panel>
+        <Panel title="Known limitations">
+          <p className="panel-copy">Large unrestricted machine circuits can reach the construction guard. The synthetic twin uses projected shop-floor conditions and requires real factory calibration.</p>
         </Panel>
         <Panel title="Documentation">
           <div className="link-list">
