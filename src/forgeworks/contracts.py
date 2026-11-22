@@ -41,6 +41,7 @@ class OptimizeRequest(Record):
 
 class AlternativeRequest(Record):
     change: Change
+    name: str | None = Field(default=None, max_length=80)
     seconds: float = Field(default=5.0, gt=0, le=45.0)
     config: SimulationConfig | None = None
 

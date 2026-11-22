@@ -2,7 +2,25 @@
 
 ForgeWorks is a local production-planning backend for a synthetic precision-metal factory. It estimates processing durations, solves and independently validates flexible job-shop schedules, evaluates delivery risk in a digital twin, and records planner approval and release. The CLI and REST API use the same services.
 
-## Quickstart
+## Manufacturing Operations Command Center
+
+React, TypeScript, Vite, TanStack Query, Tailwind, local shadcn-style controls, and Recharts bring the existing FastAPI planning workflow into eight workspaces. Docker Compose connects them through a same-origin Nginx gateway. Inspect the persisted Gantt, model measurements, simulation replications, scenario comparisons, and decision history. The interview fixture loads the published 40-order plan and its 300-replication evidence without a fresh solve.
+
+```bash
+docker compose -p forgeworks-console-demo --profile console up --build command-center
+```
+
+Open **http://127.0.0.1:4173** and choose **Interview walkthrough**. The console uses a dedicated SQLite volume. Planner actions require explicitly enabled local server authorization. [Deployment and reset](docs/deployment-guide.md) · [Interview guide](docs/interview-demo-guide.md)
+
+![Production scheduler showing machine rows, assigned operations, shifts, and maintenance](docs/screenshots/scheduler.png)
+
+[Overview](docs/screenshots/overview.png) · [Operation details](docs/screenshots/operation-detail.png) · [Prediction Studio](docs/screenshots/predictions.png) · [Digital Twin](docs/screenshots/digital-twin.png) · [Scenario Lab](docs/screenshots/scenario-lab.png)
+
+The synthetic evaluation reproduced **14.34-minute forest MAE** versus **24.08-minute ERP MAE**, with **90.56%** observed interval coverage. Unrestricted 200-order CP-SAT still reaches its construction guard. Fixed assignment validated at that size and tied the EDD objective. Digital-twin estimates reflect synthetic disturbances and modeled rules. Production execution integration, authorization, and plant calibration remain open.
+
+[Frontend architecture](docs/frontend-architecture.md) · [API integration](docs/frontend-integration-plan.md) · [Security review](docs/frontend-security.md) · [Test instructions](docs/frontend-testing.md) · [Frontend delivery report](reports/frontend-final-delivery.md)
+
+## Backend quickstart
 
 ```bash
 python3.12 -m venv .venv

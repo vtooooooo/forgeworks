@@ -80,7 +80,9 @@ def resolve(request, provider):
     return request
 
 
-def answer(service: Service, request: Query, provider: ToolProvider | None = None):
+def answer(
+    service: Service, request: Query, provider: ToolProvider | None = None, *, persist: bool = True
+):
     query = resolve(request, provider)
     run = service.schedule(query.schedule)
     factory = service.factory(run["dataset"])
@@ -204,12 +206,13 @@ def answer(service: Service, request: Query, provider: ToolProvider | None = Non
             "reason": "Use a supported tool with its required order, machine, or schedule ID.",
         }
     response = {"classification": classification, "evidence": evidence, "result": result}
-    with service.store.transaction(True) as conn:
-        db.put(
-            conn,
-            db.interactions,
-            uid(),
-            {"query": request.model_dump(), "answer": response, "at": now()},
-            schedule=query.schedule,
-        )
+    if persist:
+        with service.store.transaction(True) as conn:
+            db.put(
+                conn,
+                db.interactions,
+                uid(),
+                {"query": request.model_dump(), "answer": response, "at": now()},
+                schedule=query.schedule,
+            )
     return response
