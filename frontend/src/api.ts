@@ -1,3 +1,4 @@
+import { publicDemo, snapshotRequest } from "./public-demo";
 import { useQuery } from "@tanstack/react-query";
 import { useRef, useState } from "react";
 import type { components } from "./schema";
@@ -117,6 +118,16 @@ export async function request<T>(
   const signal = options.signal
     ? AbortSignal.any([options.signal, timeout])
     : timeout;
+  if (publicDemo) {
+    try {
+      return await snapshotRequest<T>(path, options.body, signal);
+    } catch (error) {
+      if (error instanceof Error && "status" in error && typeof error.status === "number") {
+        throw new ApiError(error.status, error.message);
+      }
+      throw error;
+    }
+  }
   const headers: Record<string, string> = {};
   if (options.body !== undefined) {
     headers["Content-Type"] = "application/json";

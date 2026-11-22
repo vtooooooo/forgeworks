@@ -1,6 +1,6 @@
+import { publicDemo } from "./public-demo";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import {
-  Activity,
   Boxes,
   CalendarRange,
   ChartNoAxesCombined,
@@ -16,10 +16,11 @@ import {
   Server,
   X,
 } from "lucide-react";
-import { Component, lazy, Suspense, useState, type ReactNode } from "react";
+import { Component, lazy, Suspense, useEffect, useRef, useState, type ReactNode } from "react";
 import { createRoot } from "react-dom/client";
 import {
   BrowserRouter,
+  HashRouter,
   Link,
   NavLink,
   Route,
@@ -56,6 +57,8 @@ const System = lazy(() =>
 import { Badge, Button, Message, Select, short } from "./ui";
 import "./styles.css";
 
+const Router = publicDemo ? HashRouter : BrowserRouter;
+
 const navigation = [
   { path: "/", label: "Overview", icon: LayoutDashboard },
   { path: "/scheduler", label: "Production Scheduler", icon: CalendarRange },
@@ -67,32 +70,20 @@ const navigation = [
   { path: "/system", label: "System Information", icon: Server },
 ];
 const stops = [
-  ["/", "Review plant health and the active release."],
-  [
-    "/scheduler",
-    "Select a scheduled operation to inspect its routing and setup.",
-  ],
-  [
-    "/predictions",
-    "Compare expected duration, ERP and historical group measurements.",
-  ],
-  [
-    "/twin",
-    "Inspect the persisted delivery risk and observed replication distributions.",
-  ],
-  ["/copilot", "Ask for the evidence behind a selected order or machine."],
-  [
-    "/scenarios",
-    "Compare the verified breakdown replan with its source schedule.",
-  ],
-  [
-    "/approvals",
-    "Inspect which simulation and planner evidence supported the release.",
-  ],
-];
+  ["/", "Read the production picture", "Precision Works must allocate competing orders to eligible machines. Compare the committed plan with the orders flagged by simulation."],
+  ["/scheduler", "Inspect a machine assignment", "Open an operation on the timeline to see its planned start, setup, and predecessor. The solver status explains what the run established."],
+  ["/predictions", "Compare model and ERP durations", "Choose an order and compare its planned operation times. The interval shows the range estimated by the synthetic model."],
+  ["/twin", "Find delivery risk", "Sort the order evidence by estimated lateness. A plan can meet every due date nominally and still face risk when processing varies."],
+  ["/copilot", "Investigate an order", "Choose Explain order timing to inspect the selected order’s machine sequence, readiness, and preceding work."],
+  ["/scenarios", "Review a disruption tradeoff", "Compare persisted schedule versions. The decision summary shows changes in simulated delivery and the comparison records protected work."],
+  ["/approvals", "Trace the release decision", "Read validation, simulation requirements, and the recorded planner decisions for the selected schedule."],
+] as const;
 function App() {
   const catalog = useCatalog();
   const location = useLocation();
+  useEffect(() => {
+    if (new URLSearchParams(location.search).get("risk") !== "watch") window.scrollTo(0, 0);
+  }, [location.pathname, location.search]);
   const navigate = useNavigate();
   const [selected, setSelected] = useState(
     () =>
@@ -103,6 +94,13 @@ function App() {
   const [order, focusOrder] = useState("");
   const [menu, setMenu] = useState(false);
   const [tour, setTour] = useState<number | null>(null);
+  const tourHeading = useRef<HTMLHeadingElement>(null);
+  const tourLauncher = useRef<HTMLButtonElement>(null);
+  const activeStop = tour === null ? null : stops[tour];
+  const touring = activeStop?.[0] === location.pathname;
+  useEffect(() => {
+    if (touring) tourHeading.current?.focus();
+  }, [tour, touring]);
   const id =
     selected || catalog.data?.preferred || catalog.data?.schedules[0]?.id || "";
   const schedule = useSchedule(id);
@@ -116,6 +114,11 @@ function App() {
     navigate(stops[step][0]);
     setMenu(false);
   };
+  const exitTour = () => {
+    setTour(null);
+    if (tourLauncher.current?.getClientRects().length && window.innerWidth > 720) tourLauncher.current.focus();
+    else document.getElementById("main-content")?.focus();
+  };
   const current = navigation.find((item) => item.path === location.pathname);
   return (
     <ConsoleContext.Provider
@@ -128,12 +131,12 @@ function App() {
         focusOrder,
       }}
     >
-      <a href="#main-content" className="skip">
+      <a href="#main-content" className="skip" onClick={event=>{event.preventDefault();document.getElementById("main-content")?.focus();}}>
         Skip to workspace
       </a>
       <div className="shell">
         <aside className={`sidebar ${menu ? "expanded" : ""}`}>
-          <Link to="/" className="brand" onClick={() => setMenu(false)}>
+          <Link to="/" className="brand" onClick={() => { setMenu(false); setTour(null); }}>
             <span className="brand-mark">
               <Factory size={21} />
             </span>
@@ -158,7 +161,7 @@ function App() {
                 end
                 key={item.path}
                 to={item.path}
-                onClick={() => setMenu(false)}
+                onClick={() => { setMenu(false); setTour(null); }}
               >
                 <item.icon size={17} />
                 {item.label}
@@ -170,7 +173,7 @@ function App() {
                 end
                 key={item.path}
                 to={item.path}
-                onClick={() => setMenu(false)}
+                onClick={() => { setMenu(false); setTour(null); }}
               >
                 <item.icon size={17} />
                 {item.label}
@@ -178,7 +181,7 @@ function App() {
             ))}
           </nav>
           <div className="sidebar-end">
-            <button onClick={() => startTour(0)}>
+            <button ref={tourLauncher} onClick={() => startTour(0)}>
               <CircleHelp size={17} /> Interview walkthrough
             </button>
             <div className="sidebar-foot">
@@ -215,7 +218,7 @@ function App() {
                 {catalog.isError
                   ? "API unavailable"
                   : catalog.isSuccess
-                    ? "API connected"
+                    ? publicDemo ? "Evidence loaded" : "API connected"
                     : "Connecting"}
               </span>
               {catalog.data?.demo && <Badge tone="blue">Demo mode</Badge>}
@@ -238,36 +241,23 @@ function App() {
               ) : null}
             </div>
           </header>
-          <main id="main-content">
-            {tour !== null && (
+          <main id="main-content" tabIndex={-1} className={touring ? "tour-active" : undefined}>
+            {publicDemo && <details className="snapshot-notice">
+              <summary>Public read-only demo</summary>
+              <p>Explore saved schedules, risk, comparisons, and evidence downloads. Run new plans and simulations or record planner decisions in the controlled local workspace.</p>
+            </details>}
+            {tour !== null && touring && activeStop && (
               <section className="tour-banner" aria-label="Guided walkthrough">
-                <Activity size={21} />
                 <div>
-                  <strong>
-                    Interview walkthrough · {tour + 1} of {stops.length}
-                  </strong>
-                  <p>{stops[tour][1]}</p>
+                  <span className="tour-progress">Interview walkthrough · Step {tour + 1} of {stops.length} · About 5 minutes</span>
+                  <h2 ref={tourHeading} tabIndex={-1}>{activeStop[1]}</h2>
+                  <p>{activeStop[2]}</p>
                 </div>
-                <Button disabled={!tour} onClick={() => startTour(tour - 1)}>
-                  Back
-                </Button>
-                <Button
-                  variant="primary"
-                  onClick={() =>
-                    tour + 1 === stops.length
-                      ? setTour(null)
-                      : startTour(tour + 1)
-                  }
-                >
+                <Button disabled={tour === 0} onClick={() => startTour(tour - 1)}>Previous</Button>
+                <Button variant="primary" onClick={() => tour + 1 === stops.length ? exitTour() : startTour(tour + 1)}>
                   {tour + 1 === stops.length ? "Finish" : "Next"}
                 </Button>
-                <Button
-                  variant="ghost"
-                  onClick={() => setTour(null)}
-                  aria-label="Close walkthrough"
-                >
-                  <X size={18} />
-                </Button>
+                <Button variant="ghost" onClick={exitTour} aria-label="Close walkthrough">Exit</Button>
               </section>
             )}
             {catalog.isPending && (
@@ -367,9 +357,9 @@ if (root)
   createRoot(root).render(
     <Boundary>
       <QueryClientProvider client={queryClient}>
-        <BrowserRouter>
+        <Router>
           <App />
-        </BrowserRouter>
+        </Router>
       </QueryClientProvider>
     </Boundary>,
   );
