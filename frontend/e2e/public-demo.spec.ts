@@ -2,11 +2,16 @@ import { expect, test } from "@playwright/test";
 
 test.skip(process.env.FORGEWORKS_PUBLIC_SMOKE !== "1", "Runs against the read-only public build");
 
-test("public recruiter demo provides verified evidence without write access", async ({ page }) => {
+test("public recruiter demo provides verified evidence without write access", async ({ page, request }) => {
   const errors: string[] = [];
-  const methods: string[] = [];
+  const writes: string[] = [];
   page.on("pageerror", error => errors.push(error.message));
-  page.on("request", request => methods.push(request.method()));
+  page.on("request", event => {
+    const path = new URL(event.url()).pathname;
+    if (event.method() !== "GET" && /\/(api|demo)\//.test(path)) {
+      writes.push(`${event.method()} ${path}`);
+    }
+  });
   const go = async (label: string) => {
     await page.getByRole("navigation").getByRole("link", { name: label, exact: true }).click();
     await expect(page.getByRole("heading", { name: label, exact: true })).toBeVisible();
@@ -37,6 +42,8 @@ test("public recruiter demo provides verified evidence without write access", as
   await expect(page.getByRole("heading", { name: "Scenario Lab", exact: true })).toBeVisible();
   await go("Schedule Approvals");
   await expect(page.getByRole("button", { name: "Release", exact: true })).toBeDisabled();
-  expect(methods.every(method => method === "GET")).toBe(true);
+  expect(writes).toEqual([]);
+  const denied = await request.post("/api/v1/schedules/demo/release", { data: {} });
+  expect([404, 405, 501]).toContain(denied.status());
   expect(errors).toEqual([]);
 });
