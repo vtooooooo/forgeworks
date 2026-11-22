@@ -81,6 +81,9 @@ const stops = [
 function App() {
   const catalog = useCatalog();
   const location = useLocation();
+  useEffect(() => {
+    if (new URLSearchParams(location.search).get("risk") !== "watch") window.scrollTo(0, 0);
+  }, [location.pathname, location.search]);
   const navigate = useNavigate();
   const [selected, setSelected] = useState(
     () =>
@@ -109,7 +112,6 @@ function App() {
   const startTour = (step: number) => {
     setTour(step);
     navigate(stops[step][0]);
-    window.scrollTo(0, 0);
     setMenu(false);
   };
   const exitTour = () => {

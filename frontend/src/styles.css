@@ -1643,3 +1643,25 @@ tbody tr:hover {
   font-variant-numeric: tabular-nums;
   font-size: 1.15rem;
 }
+.conversation {
+  grid-template-columns: minmax(0, 1fr);
+}
+.conversation > div {
+  min-width: 0;
+}
+.evidence-result td:nth-child(n + 3),
+.evidence-result th:nth-child(n + 3) {
+  white-space: normal;
+}
+.evidence-note summary + p {
+  margin-top: 6px;
+}
+.page-title .field {
+  min-width: min(225px, 100%);
+}
+.chart-legend-label {
+  color: #334e69;
+}
+.comparison-changes {
+  margin: 0 15px 12px;
+}

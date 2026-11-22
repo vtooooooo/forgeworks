@@ -80,12 +80,12 @@ export function spanStyle(start: number, end: number, horizon: number) {
 }
 const palette = [
   "#2667d2",
-  "#6486c9",
-  "#268c91",
-  "#4a72bf",
-  "#8b61c4",
-  "#4c8d77",
-  "#407cac",
+  "#4565a7",
+  "#187278",
+  "#3d5b98",
+  "#7449a9",
+  "#32715e",
+  "#316384",
 ];
 const orderColor = (id: string) =>
   palette[[...id].reduce((v, c) => v + c.charCodeAt(0), 0) % palette.length];
@@ -352,13 +352,13 @@ export function Scheduler() {
         >
           <Download size={16} /> Export
         </a>
-        <Button
+        {!publicDemo && <Button
           variant="primary"
           disabled={!catalog?.can_plan || job.busy}
           onClick={() => setConfig(true)}
         >
           <Plus size={18} /> Generate schedule
-        </Button>
+        </Button>}
       </PageTitle>
       <div className="context-strip">
         <span>

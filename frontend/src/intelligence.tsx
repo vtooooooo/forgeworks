@@ -238,30 +238,33 @@ export function Predictions() {
             role="group"
             aria-label="Duration comparison chart in minutes. Exact values appear in the table below."
           >
-            <ResponsiveContainer width="100%" height={260}>
+            <ResponsiveContainer width="100%" height={235}>
               <BarChart
                 data={chartRows}
                 margin={{ top: 10, right: 20, left: 0, bottom: 0 }}
               >
                 <CartesianGrid vertical={false} stroke="#e6edf5" />
                 <XAxis dataKey="operation" />
-                <YAxis width={52} unit=" min" />
+                <YAxis width={65} unit=" min" />
                 <Tooltip />
-                <Legend />
+                <Legend formatter={(label) => <span className="chart-legend-label">{label}</span>} />
                 <Bar
                   dataKey="erp"
+                  isAnimationActive={false}
                   name="ERP standard"
                   fill="#576e87"
                   radius={[4, 4, 0, 0]}
                 />
                 <Bar
                   dataKey="expected"
+                  isAnimationActive={false}
                   name="Model estimate"
                   fill="#3874d5"
                   radius={[4, 4, 0, 0]}
                 />
                 <Bar
                   dataKey="history_mean"
+                  isAnimationActive={false}
                   name="Historical group mean"
                   fill="#28796f"
                   radius={[4, 4, 0, 0]}
@@ -486,13 +489,31 @@ export function Twin() {
   const ranked = [...(snapshot?.risk ?? [])].sort(
     (a, b) => b.p_late - a.p_late,
   );
+  const runPicker = (
+    <Field label="Simulation run">
+      <Select
+        value={activeSim ?? ""}
+        onChange={(e) => setChosen(e.target.value)}
+      >
+        <option value="">Latest evidence</option>
+        {s.simulations.map((r) => (
+          <option key={String(r.id)} value={String(r.id)}>
+            {short(String(r.id))} ·{" "}
+            {String((r.config as { runs: number })?.runs)} replications
+          </option>
+        ))}
+      </Select>
+    </Field>
+  );
   return (
     <>
       <PageTitle
         title="Digital Twin"
         subtitle="Synthetic execution uncertainty and order-level delivery evidence."
-      />
-      <Panel
+      >
+        {publicDemo && s.simulations.length > 0 && runPicker}
+      </PageTitle>
+      {!publicDemo && <Panel
         title="Simulation controls"
         subtitle={`Schedule ${short(s.id)} · ${s.simulations.length} persisted runs`}
       >
@@ -507,20 +528,7 @@ export function Twin() {
             });
           }}
         >
-          <Field label="Simulation run">
-            <Select
-              value={activeSim ?? ""}
-              onChange={(e) => setChosen(e.target.value)}
-            >
-              <option value="">Latest evidence</option>
-              {s.simulations.map((r) => (
-                <option key={String(r.id)} value={String(r.id)}>
-                  {short(String(r.id))} ·{" "}
-                  {String((r.config as { runs: number })?.runs)} replications
-                </option>
-              ))}
-            </Select>
-          </Field>
+          {runPicker}
           <Field label="Replications">
             <input
               type="number"
@@ -551,7 +559,7 @@ export function Twin() {
           </Button>
         </form>
         <JobStatus {...job} />
-      </Panel>
+      </Panel>}
       {risk.isFetching && (
         <Message kind="loading">Loading stored simulation results</Message>
       )}
@@ -595,7 +603,10 @@ export function Twin() {
               icon={<Activity size={20} />}
             />
           </div>
-          <p className="evidence-note">The nominal plan uses scheduled durations. The twin estimates the share delivered on time across replications, sums priority-weighted late minutes, and estimates when the last order finishes. The 95% intervals describe uncertainty in the simulated means.</p>
+          <details className="evidence-note">
+            <summary>How to read simulation outcomes</summary>
+            <p>The nominal plan uses scheduled durations. The twin estimates the share delivered on time across replications, sums priority-weighted late minutes, and estimates when the last order finishes. The 95% intervals describe uncertainty in the simulated means.</p>
+          </details>
           <OrderRiskTable schedule={s} rows={ranked} />
           <div className="overview-grid">
             <Panel
@@ -674,6 +685,7 @@ function Distribution({
             <Tooltip labelFormatter={(value) => `${unit}, bin starting at ${value}`} />
             <Bar
               dataKey="count"
+              isAnimationActive={false}
               name="Replications"
               fill={color}
               radius={[4, 4, 0, 0]}

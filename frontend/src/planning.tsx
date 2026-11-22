@@ -147,11 +147,11 @@ export function scenarioChange(form: EventForm, s: Schedule): Change {
   return { kind, machine, start: begin, end, index };
 }
 
-function scenarioDelta(before: number | undefined, after: number | undefined, fraction: boolean) {
+function scenarioDelta(before: number | undefined, after: number | undefined, unit?: string) {
   if (before == null || after == null) return null;
-  const delta = (after - before) * (fraction ? 100 : 1);
+  const delta = (after - before) * (unit === "percentage points" ? 100 : 1);
   if (Math.abs(delta) < 0.005) return "stayed the same";
-  return `${delta > 0 ? "increased" : "decreased"} by ${number(Math.abs(delta), 2)}${fraction ? " percentage points" : ""}`;
+  return `${delta > 0 ? "increased" : "decreased"} by ${number(Math.abs(delta), 2)}${unit ? ` ${unit}` : ""}`;
 }
 
 export function Comparison({
@@ -271,8 +271,8 @@ export function Comparison({
       true,
     ],
   ];
-  const onTimeDelta = scenarioDelta(ra.data?.summary.on_time?.mean, rb.data?.summary.on_time?.mean, true);
-  const tardinessDelta = scenarioDelta(ra.data?.summary.weighted_tardiness?.mean, rb.data?.summary.weighted_tardiness?.mean, false);
+  const onTimeDelta = scenarioDelta(ra.data?.summary.on_time?.mean, rb.data?.summary.on_time?.mean, "percentage points");
+  const tardinessDelta = scenarioDelta(ra.data?.summary.weighted_tardiness?.mean, rb.data?.summary.weighted_tardiness?.mean, "weighted minutes");
   return (
     <>
       <div className="context-strip">
@@ -291,11 +291,21 @@ export function Comparison({
       </div>
       <section className="decision-summary">
         <h3>Decision summary</h3>
-        <p>Both schedules passed independent validation. {saved ? `${number(after.frozen)} operations were protected in the recorded change.` : ""}</p>
+        <p>Both schedules passed independent validation. {saved ? `${number(after.frozen)} ${after.frozen === 1 ? "operation was" : "operations were"} protected in the recorded change.` : ""}</p>
         <p>{onTimeDelta && tardinessDelta
           ? `In the stored runs, estimated on-time delivery ${onTimeDelta} and mean weighted tardiness ${tardinessDelta}.`
           : "A simulation comparison requires stored runs for both schedules."}</p>
       </section>
+      <div className="context-strip comparison-changes">
+        <span>{moved.length} moved operations</span>
+        <span>
+          {moved.filter((o) => o.machine !== o.previous.machine).length} machine
+          reassignments
+        </span>
+        <span>{after.frozen} protected operations</span>
+        <span>{newlyLate.length} newly late</span>
+        <span>{recovered.length} recovered</span>
+      </div>
       <Table
         columns={["Metric", "Source", "Alternative", "Difference"]}
         rows={stats.map(([label, original, revised, fraction]) => {
@@ -352,16 +362,6 @@ export function Comparison({
           ])}
         />
       )}
-      <div className="context-strip">
-        <span>{moved.length} moved operations</span>
-        <span>
-          {moved.filter((o) => o.machine !== o.previous.machine).length} machine
-          reassignments
-        </span>
-        <span>{after.frozen} protected operations</span>
-        <span>{newlyLate.length} newly late</span>
-        <span>{recovered.length} recovered</span>
-      </div>
       <details className="panel-copy">
         <summary>Changed operations and completions</summary>
         <Table
@@ -827,7 +827,7 @@ export function Approvals() {
     <>
       <PageTitle
         title="Schedule Approvals"
-        subtitle="Review validation, simulation, and release evidence before making a planning decision."
+        subtitle={publicDemo ? "Trace how this schedule was validated, reviewed, and released." : "Review validation, simulation, and release evidence before making a planning decision."}
       />
       <div className="overview-grid">
         <Panel

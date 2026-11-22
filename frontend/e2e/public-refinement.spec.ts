@@ -38,21 +38,40 @@ test("the public artifact preserves evidence and presents structured results", a
   await page.goto("/");
   await expect(page.getByText("40 scheduled · 40 open")).toBeVisible();
   await expect(page.getByText(/96\.4% estimated on-time delivery · 300 replications/)).toBeVisible();
+  const index = await page.request.get("./demo/index.json");
+  expect(index.ok()).toBeTruthy();
+  const { catalog } = await index.json();
+  expect(catalog).toMatchObject({ can_plan: false, can_approve: false, mode: "public-snapshot" });
+  expect(catalog.schedules).toHaveLength(3);
+  for (const { id, valid, operation_count } of catalog.schedules) {
+    const snapshot = await page.request.get(`./demo/${id}.json`);
+    const bundle = await page.request.get(`./demo/${id}.zip`);
+    expect(snapshot.ok() && bundle.ok()).toBeTruthy();
+    const { schedule, validation, risks } = await snapshot.json();
+    expect(valid && validation.valid).toBeTruthy();
+    expect(schedule.id).toBe(id);
+    expect(schedule.plan.operations).toHaveLength(operation_count);
+    expect((await bundle.body()).subarray(0, 4).toString("hex")).toBe("504b0304");
+    for (const { projection, completions } of Object.values(risks) as { projection: { config: { runs: number } }; completions: object[] }[]) {
+      expect(completions).toHaveLength(projection.config.runs);
+    }
+  }
   await screenshot(page, "overview");
 
   await page.getByRole("link", { name: "View orders with ≥10% modeled risk" }).click();
   const level = page.getByLabel("Risk level");
   await expect(level).toHaveValue("Delivery watch");
-  await expect(page.getByRole("status")).toHaveText("1–2 of 2 orders");
+  const orderCount = page.getByRole("status").filter({ hasText: /of \d+ orders/ });
+  await expect(orderCount).toHaveText("1–2 of 2 orders");
   await level.selectOption("");
-  await expect(page.getByRole("status")).toHaveText("1–10 of 40 orders");
+  await expect(orderCount).toHaveText("1–10 of 40 orders");
   await expect(page.getByRole("columnheader", { name: /Estimated late/ })).toHaveAttribute("aria-sort", "descending");
   await page.getByRole("button", { name: "Next page" }).click();
-  await expect(page.getByRole("status")).toHaveText("11–20 of 40 orders");
+  await expect(orderCount).toHaveText("11–20 of 40 orders");
   await page.getByRole("button", { name: "Order", exact: true }).click();
   await expect(page.getByRole("columnheader", { name: "Order", exact: true })).toHaveAttribute("aria-sort", "ascending");
   await page.getByRole("searchbox", { name: "Search order ID" }).fill("ORD-130");
-  await expect(page.getByRole("status")).toHaveText("1–1 of 1 orders");
+  await expect(orderCount).toHaveText("1–1 of 1 orders");
   await expect(page.getByRole("rowheader", { name: "ORD-130" })).toBeVisible();
   await page.getByRole("searchbox", { name: "Search order ID" }).clear();
   await page.getByRole("button", { name: "Estimated late", exact: true }).click();
@@ -82,6 +101,10 @@ test("the public artifact preserves evidence and presents structured results", a
   await page.getByRole("button", { name: "Compare schedule versions" }).click();
   await expect(page.getByRole("heading", { name: "Schedule Comparison" })).toBeVisible();
   await expect(page.getByRole("columnheader", { name: "Previous start" })).toBeVisible();
+  await expect(page.getByText("Operations moved", { exact: true }).locator("..")).toHaveText("Operations moved137");
+  await expect(page.getByText("Machine reassignments", { exact: true }).locator("..")).toHaveText("Machine reassignments99");
+  const conversation = page.locator(".conversation");
+  expect(await conversation.evaluate((element) => element.scrollWidth - element.clientWidth)).toBeLessThanOrEqual(1);
   await expect(page.getByText("Protected operations", { exact: true }).locator("..")).toContainText("1");
   await expect(page.locator(".evidence pre")).toBeHidden();
   await screenshot(page, "copilot");
@@ -140,7 +163,11 @@ test("the full walkthrough is keyboard accessible and layouts fit four viewport 
       expect(overflow, `${workspace[0]} at ${width}px`).toBeLessThanOrEqual(1);
       if (workspace[0] === "scheduler") {
         const timeline = page.getByLabel("Scrollable machine schedule");
-        await page.getByRole("button", { name: "Zoom in" }).click();
+        const zoom = page.getByRole("button", { name: "Zoom in" });
+        for (let step = 0; step < 5 && await zoom.isEnabled(); step++) {
+          await zoom.click();
+          if (await timeline.evaluate((element) => element.scrollWidth > element.clientWidth)) break;
+        }
         await timeline.evaluate((element) => { element.scrollLeft = 200; });
         await expect.poll(() => timeline.evaluate((element) => element.scrollLeft)).toBeGreaterThan(0);
       }
